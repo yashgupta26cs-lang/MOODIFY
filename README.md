@@ -1,1 +1,89 @@
-# MOODIFY\n\nAn AI‑based music web application built with Flask, MySQL and a simple front‑end.\n\n## Features\n- User registration and login\n- Browse music by language, mood and artist\n- Play audio, view lyrics, watch video (placeholder)\n- Playback speed, reverb and karaoke toggles (demo placeholders)\n- Create personal playlists\n- Mood history visualised with a line chart\n- Simple AI‑style random recommendations\n- User profile and logout\n\n## Prerequisites\n- **Python 3.9+** installed and added to your PATH\n- **MySQL Server** running locally (or remote)\n- **Git** (optional, for cloning)\n\n## Setup Steps (Beginner Friendly)\n1. **Create a MySQL database**\n   ```sql\n   CREATE DATABASE moodify_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n   ```\n   Use any username/password you like – remember them for later.\n\n2. **Open a terminal (PowerShell)** and navigate to the project folder `C:\MOODIFY`.\n   ```powershell\n   cd C:\MOODIFY\n   ```\n\n3. **Create a virtual environment** (isolates packages).\n   ```powershell\n   python -m venv venv\n   .\venv\Scripts\Activate.ps1   # PowerShell activation\n   ```\n\n4. **Install required Python packages**\n   ```powershell\n   pip install -r requirements.txt\n   ```\n\n5. **Configure the database connection** (optional)\n   - By default the app expects `root` user with password `password` on `localhost`.\n   - To change, edit `config.py` and modify the line:\n     ```python\n     SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://USER:PASSWORD@HOST/moodify_db'\n     ```\n   - Or set the environment variable `DATABASE_URL` before running the app.\n\n6. **Create tables and seed some demo music**\n   ```powershell\n   python seed_data.py\n   ```\n   This will create the tables and insert a few royalty‑free songs (audio files are not included – the demo will show placeholder messages).\n\n7. **Run the application**\n   ```powershell\n   python run.py\n   ```\n   The server starts at `http://127.0.0.1:5000`. Open this URL in your browser.\n\n8. **Register a new account** and explore the features!\n\n## Project Structure\n````\nMOODIFY/\n│   run.py               # entry point\n│   config.py            # config values\n│   requirements.txt\n│   seed_data.py         # creates DB tables & demo data\n│\n├───app/\n│   │   __init__.py      # Flask factory\n│   │   models.py\n│   │   auth.py\n│   │   main.py\n│   │\n│   ├───templates/      # HTML pages\n│   └───static/\n│       ├───css/\n│       ├───js/\n│       └───media/      # put audio/video files here\n```\n\n## Notes for Beginners\n- The **audio/video files** are looked for in `app/static/media/`. You can place any `.mp3` or `.mp4` files there and reference them in the database.\n- The *reverb* and *karaoke* buttons are just placeholders; implementing real audio effects requires extra JavaScript libraries.\n- The **AI recommendations** are currently random songs – you can replace the stub in `app/main.py` with a proper model later.\n\nEnjoy building with MOODIFY!\n
+# MOODIFY
+
+An AI‑based music web application built with Flask, MySQL and a simple front‑end.
+
+## Features
+- User registration and login
+- Browse music by language, mood and artist
+- Play audio, view lyrics, watch video (placeholder)
+- Playback speed, reverb and karaoke toggles (demo placeholders)
+- Create personal playlists
+- Mood history visualised with a line chart
+- Simple AI‑style random recommendations
+- User profile and logout
+
+## Prerequisites
+- **Python 3.9+** installed and added to your PATH
+- **MySQL Server** running locally (or remote)
+- **Git** (optional, for cloning)
+
+## Setup Steps (Beginner Friendly)
+1. **Create a MySQL database**
+   ```sql
+   CREATE DATABASE moodify_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   ```
+   Use any username/password you like – remember them for later.
+
+2. **Open a terminal (PowerShell)** and navigate to the project folder `C:\MOODIFY`.
+   ```powershell
+   cd C:\MOODIFY
+   ```
+
+3. **Create a virtual environment** (isolates packages).
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1   # PowerShell activation
+   ```
+
+4. **Install required Python packages**
+   ```powershell
+   pip install -r requirements.txt
+   ```
+5. **Configure the database connection**
+   - Copy `.env.example` to a new file named `.env`.
+   - Open `.env` and enter your MySQL username, password, host and database name.
+   - Set `SECRET_KEY` to a long random value.
+   - Never upload or share your `.env` file. It contains private credentials.
+   - The `.gitignore` file excludes `.env` from Git uploads.
+
+6. **Create tables and seed some demo music**
+   ```powershell
+   python seed_data.py
+   ```
+   This will create the tables and insert a few royalty‑free songs (audio files are not included – the demo will show placeholder messages).
+
+7. **Run the application**
+   ```powershell
+   python run.py
+   ```
+   The server starts at `http://127.0.0.1:5000`. Open this URL in your browser.
+
+8. **Register a new account** and explore the features!
+
+## Project Structure
+````
+MOODIFY/
+│   run.py               # entry point
+│   config.py            # config values
+│   requirements.txt
+│   seed_data.py         # creates DB tables & demo data
+│
+├───app/
+│   │   __init__.py      # Flask factory
+│   │   models.py
+│   │   auth.py
+│   │   main.py
+│   │
+│   ├───templates/      # HTML pages
+│   └───static/
+│       ├───css/
+│       ├───js/
+│       └───media/      # put audio/video files here
+```
+
+## Notes for Beginners
+- The **audio/video files** are looked for in `app/static/media/`. You can place any `.mp3` or `.mp4` files there and reference them in the database.
+- The *reverb* and *karaoke* buttons are just placeholders; implementing real audio effects requires extra JavaScript libraries.
+- The **AI recommendations** are currently random songs – you can replace the stub in `app/main.py` with a proper model later.
+
+Enjoy building with MOODIFY!
