@@ -1,0 +1,155 @@
+/* Base styling */
+body {
+    background-color: #121212; /* dark overall background */
+    color: #e0e0e0;
+    margin: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: hidden;
+}
+
+/* Gradient background for auth pages */
+.auth-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2b1055, #7e0b8b, #3a1c71, #1e90ff);
+    background-size: 400% 400%;
+    animation: gradientBG 20s ease infinite;
+    overflow: hidden;
+    z-index: -1;
+}
+
+@keyframes gradientBG {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+/* Glass‑effect form container */
+.auth-form {
+    background: rgba(255,255,255,0.08);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.37);
+    width: 100%;
+    max-width: 420px;
+    color: #fff;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.18);
+    animation: slideIn 0.8s ease forwards;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+@keyframes slideIn {
+    to {opacity:1; transform: translateY(0);}
+}
+
+.auth-form h2 {
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.9rem;
+    color: #fff;
+}
+
+/* Input with icons */
+.auth-form .input-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+.auth-form .input-group i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #bbb;
+}
+.auth-form .form-control {
+    padding-left: 2.5rem;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid #555;
+    color: #fff;
+}
+.auth-form .form-control:focus {
+    background: rgba(255,255,255,0.2);
+    border-color: #aaa;
+    box-shadow: none;
+    color: #fff;
+}
+
+/* Password toggle */
+.auth-form .password-toggle {
+    position: relative;
+}
+.auth-form .password-toggle .toggle-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #bbb;
+}
+
+/* Buttons */
+.auth-form .btn-primary {
+    background: linear-gradient(45deg, #6a11cb, #2575fc);
+    border: none;
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.auth-form .btn-primary:hover {
+    background: linear-gradient(45deg, #5a0fb0, #1e64e0);
+    transform: translateY(-2px);
+}
+
+.auth-form .link {
+    display: block;
+    margin-top: 1rem;
+    text-align: center;
+    color: #bbb;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+.auth-form .link:hover {
+    color: #fff;
+}
+
+/* Logo */
+.logo {
+    display: block;
+    margin: 0 auto 1.5rem auto;
+    width: 80px;
+    height: auto;
+    animation: fadeIn 1s ease forwards;
+}
+@keyframes fadeIn {
+    from {opacity:0; transform: scale(0.8);}
+    to {opacity:1; transform: scale(1);}
+}
+
+/* Floating music notes */
+.floating-note {
+    position: absolute;
+    font-size: 2rem;
+    color: rgba(255,255,255,0.15);
+    animation: floatNote 10s linear infinite;
+    user-select: none;
+}
+@keyframes floatNote {
+    0% {transform: translateY(100vh) rotate(0deg); opacity:0;}
+    50% {opacity:0.8;}
+    100% {transform: translateY(-10vh) rotate(360deg); opacity:0;}
+}
+
+/* Navbar adjustments */
+.navbar-brand {font-weight: bold; font-size: 1.5rem; color: #fff;}
+.navbar-dark .navbar-nav .nav-link {color: rgba(255,255,255,.75);}
+.navbar-dark .navbar-nav .nav-link:hover {color:#fff;}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Music - MOODIFY{% endblock %}
+{% block content %}
+<h2 class="mb-4">Browse Music</h2>
+<form class="row g-3 mb-4" method="GET" action="{{ url_for('main.music') }}">
+  <div class="col-md-3">
+    <input type="text" class="form-control" name="language" placeholder="Language" value="{{ request.args.get('language','') }}">
+  </div>
+  <div class="col-md-3">
+    <input type="text" class="form-control" name="mood" placeholder="Mood" value="{{ request.args.get('mood','') }}">
+  </div>
+  <div class="col-md-3">
+    <input type="text" class="form-control" name="singer" placeholder="Singer/Artist" value="{{ request.args.get('singer','') }}">
+  </div>
+  <div class="col-md-3">
+    <button type="submit" class="btn btn-primary w-100">Search</button>
+  </div>
+</form>
+<div class="row">
+  {% for song in songs %}
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      <div class="card-body d-flex flex-column">
+        <h5 class="card-title">{{ song.title }}</h5>
+        <p class="card-text">{{ song.artist }}</p>
+        <p class="card-text"><small class="text-muted">{{ song.language }} • {{ song.mood }}</small></p>
+        <a href="{{ url_for('main.play', music_id=song.id) }}" class="mt-auto btn btn-outline-primary">Play</a>
+      </div>
+    </div>
+  </div>
+  {% else %}
+    <p>No songs found.</p>
+  {% endfor %}
+</div>
+{% endblock %}

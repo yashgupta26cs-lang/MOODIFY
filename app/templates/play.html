@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Play - MOODIFY{% endblock %}
+{% block content %}
+<h2 class="mb-4">{{ song.title }} - {{ song.artist }}</h2>
+<div class="mb-3">
+  {% if song.audio_file %}
+  <audio id="audioPlayer" src="{{ url_for('static', filename='media/' + song.audio_file) }}" controls></audio>
+  {% else %}
+  <p>No audio available.</p>
+  {% endif %}
+</div>
+<div class="mb-3">
+  {% if song.lyrics %}
+  <button class="btn btn-secondary" id="toggleLyricsBtn">Show Lyrics</button>
+  <pre id="lyrics" style="display:none; white-space:pre-wrap; background:#f8f9fa; padding:1rem; border:1px solid #ddd; margin-top:1rem;">{{ song.lyrics }}</pre>
+  {% endif %}
+</div>
+<div class="mb-3">
+  {% if song.video_file %}
+  <video width="100%" controls>
+    <source src="{{ url_for('static', filename='media/' + song.video_file) }}" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  {% endif %}
+</div>
+<!-- Simple playback controls -->
+<div class="row">
+  <div class="col-md-4">
+    <label for="playbackSpeed" class="form-label">Speed</label>
+    <select id="playbackSpeed" class="form-select">
+      <option value="1" selected>Normal</option>
+      <option value="0.75">0.75x</option>
+      <option value="1.25">1.25x</option>
+      <option value="1.5">1.5x</option>
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Reverb</label>
+    <button id="reverbBtn" class="btn btn-outline-primary w-100">Toggle Reverb</button>
+  </div>
+  <div class="col-md-4">
+    <label class="form-label">Karaoke</label>
+    <button id="karaokeBtn" class="btn btn-outline-primary w-100">Toggle Karaoke</button>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+document.getElementById('toggleLyricsBtn')?.addEventListener('click', function(){
+  const el = document.getElementById('lyrics');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+});
+</script>
+{% endblock %}

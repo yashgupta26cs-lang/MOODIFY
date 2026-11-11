@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Playlists - MOODIFY{% endblock %}
+{% block content %}
+<h2 class="mb-4">Your Playlists</h2>
+<form method="POST" action="{{ url_for('main.create_playlist') }}" class="mb-3">
+  <div class="input-group">
+    <input type="text" name="name" class="form-control" placeholder="New playlist name" required>
+    <button class="btn btn-success" type="submit">Create</button>
+  </div>
+</form>
+<div class="list-group">
+  {% for pl in playlists %}
+  <a href="#" class="list-group-item list-group-item-action">
+    {{ pl.name }} ({{ pl.songs|length }} songs)
+  </a>
+  {% else %}
+  <p>You have no playlists yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

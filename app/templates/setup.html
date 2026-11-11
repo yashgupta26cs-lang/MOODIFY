@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Setup – MOODIFY{% endblock %}
+{% block content %}
+<div class="auth-bg">
+    <div class="auth-form">
+        <h2>Welcome! Complete Your Profile</h2>
+        <form method="POST" action="{{ url_for('main.setup') }}">
+            <div class="mb-3">
+                <label class="form-label" for="preferred_mood">Preferred Mood</label>
+                <input type="text" class="form-control" id="preferred_mood" name="preferred_mood" placeholder="e.g., Happy, Relaxed" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="favorite_singer">Favorite Singer / Artist</label>
+                <input type="text" class="form-control" id="favorite_singer" name="favorite_singer" placeholder="e.g., Adele" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Save & Continue</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

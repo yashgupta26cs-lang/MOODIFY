@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Profile - MOODIFY{% endblock %}
+{% block content %}
+<h2 class="mb-4">Your Profile</h2>
+<ul class="list-group">
+  <li class="list-group-item"><strong>Username:</strong> {{ current_user.username }}</li>
+  <li class="list-group-item"><strong>Email:</strong> {{ current_user.email }}</li>
+</ul>
+{% endblock %}
