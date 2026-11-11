@@ -1,3 +1,4 @@
+
 """Configuration settings for MOODIFY."""
 
 import os
@@ -30,6 +31,7 @@ def _build_database_uri():
 
     full_url = os.getenv("DATABASE_URL")
 
+    # Use the complete URL when provided by the hosting service.
     if full_url:
         return full_url
 
@@ -52,6 +54,27 @@ def _build_database_uri():
     )
 
 
+def _build_engine_options():
+    """Configure database connection pooling and optional SSL."""
+
+    options = {
+        "pool_recycle": 300,
+        "pool_pre_ping": True,
+    }
+
+    # Optional SSL certificate for MySQL-compatible hosting.
+    ca_path = os.getenv("DB_SSL_CA")
+
+    if ca_path:
+        options["connect_args"] = {
+            "ssl_verify_cert": True,
+            "ssl_verify_identity": True,
+            "ssl_ca": ca_path,
+        }
+
+    return options
+
+
 class Config:
     """Flask application configuration."""
 
@@ -63,15 +86,13 @@ class Config:
     SQLALCHEMY_DATABASE_URI = _build_database_uri()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Database connection settings
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-    }
+    SQLALCHEMY_ENGINE_OPTIONS = _build_engine_options()
 
     # Session security
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+
+    # Enable secure cookies when deployed over HTTPS.
     SESSION_COOKIE_SECURE = (
         os.getenv("COOKIE_SECURE", "false").lower() == "true"
     )
