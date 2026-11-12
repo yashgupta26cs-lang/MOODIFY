@@ -1,30 +1,965 @@
+
 {% extends 'base.html' %}
-{% block title %}Login – MOODIFY{% endblock %}
+
+{% block title %}MOODIFY | Your World of Music{% endblock %}
+
 {% block content %}
-<div class="auth-bg">
-    <div class="auth-form">
-        <h2>Log In</h2>
-        <form method="POST" action="{{ url_for('auth.login') }}">
-            <div class="mb-3">
-                <label class="form-label" for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" placeholder="you@example.com" required>
-            </div>
-            <div class="mb-3 password-toggle">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required>
-                <span class="toggle-icon" onclick="togglePassword('password')">👁️</span>
-            </div>
-            <button type="submit" class="btn btn-primary">Log In</button>
-        </form>
-        <a href="{{ url_for('auth.register') }}" class="link">Don't have an account? Create one</a>
-    </div>
-</div>
-{% endblock %}
-<script>
-function togglePassword(id) {
-    const field = document.getElementById(id);
-    const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-    field.setAttribute('type', type);
+
+<style>
+/* ==========================================
+   MOODIFY — PREMIUM LOGIN EXPERIENCE
+========================================== */
+
+:root {
+    --bg: #090711;
+    --purple: #9865f5;
+    --violet: #7139d5;
+    --lavender: #d5bcff;
+    --muted: #a49ab8;
 }
+
+body:has(.moodify-page) {
+    margin: 0;
+    background: var(--bg);
+    color: white;
+    overflow-x: hidden;
+}
+
+body:has(.moodify-page) > nav.navbar {
+    display: none !important;
+}
+
+body:has(.moodify-page) > .container {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+}
+
+body:has(.moodify-page) .alert {
+    position: relative;
+    z-index: 5;
+    margin: 12px auto;
+    max-width: 500px;
+    border-radius: 12px;
+}
+
+/* BACKGROUND */
+
+.moodify-page {
+    min-height: 100vh;
+    min-height: 100svh;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(ellipse at 8% 15%, #43216c55, transparent 42%),
+        radial-gradient(ellipse at 90% 85%, #38206c50, transparent 43%),
+        linear-gradient(135deg, #090711, #100b1d 55%, #090711);
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.moodify-page::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: .15;
+    background-image:
+        linear-gradient(#ffffff08 1px, transparent 1px),
+        linear-gradient(90deg, #ffffff08 1px, transparent 1px);
+    background-size: 55px 55px;
+    mask-image: linear-gradient(to bottom, black, transparent 90%);
+}
+
+.glow {
+    position: absolute;
+    width: 420px;
+    height: 420px;
+    border-radius: 50%;
+    filter: blur(110px);
+    z-index: -1;
+    pointer-events: none;
+    opacity: .26;
+    animation: glowFloat 14s ease-in-out infinite alternate;
+}
+
+.glow-one {
+    background: #903ef3;
+    top: -200px;
+    left: -150px;
+}
+
+.glow-two {
+    background: #5142ce;
+    bottom: -220px;
+    right: -120px;
+    animation-delay: -7s;
+}
+
+@keyframes glowFloat {
+    to {
+        transform: translate(90px, 80px) scale(1.3);
+    }
+}
+
+/* PARTICLES */
+
+.particle {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #d5bcff;
+    box-shadow: 0 0 18px #b77aff;
+    pointer-events: none;
+    opacity: .5;
+    animation: particleFloat 8s ease-in-out infinite;
+}
+
+.p1 { top: 23%; left: 8%; }
+.p2 { top: 76%; left: 42%; animation-delay: -3s; }
+.p3 { top: 20%; right: 10%; animation-delay: -5s; }
+.p4 { top: 55%; right: 5%; animation-delay: -2s; }
+
+@keyframes particleFloat {
+    50% {
+        transform: translateY(-35px) scale(1.6);
+        opacity: 1;
+    }
+}
+
+/* HEADER */
+
+.moodify-header {
+    height: 92px;
+    padding: 0 7%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    z-index: 2;
+    border-bottom: 1px solid #ffffff0a;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #fff;
+    font-size: 25px;
+    font-weight: 850;
+    letter-spacing: 3px;
+}
+
+.brand:hover {
+    color: #fff;
+}
+
+.brand-icon {
+    width: 43px;
+    height: 43px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(140deg, #bd91ff, #873ee5, #5430b6);
+    box-shadow: 0 0 25px #994cf455;
+}
+
+.brand-icon svg {
+    width: 25px;
+    height: 25px;
+}
+
+.header-caption {
+    color: #9d91b5;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+}
+
+/* MAIN LAYOUT */
+
+.moodify-main {
+    width: 87%;
+    max-width: 1250px;
+    min-height: calc(100vh - 155px);
+    min-height: calc(100svh - 155px);
+    padding: 55px 0;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    align-items: center;
+    gap: 75px;
+}
+
+/* LEFT SECTION */
+
+.hero-section {
+    animation: enterLeft .9s ease both;
+}
+
+@keyframes enterLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-35px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    margin-bottom: 27px;
+    border: 1px solid #b88cff38;
+    border-radius: 40px;
+    background: #a855f715;
+    color: #d4b5ff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.tag-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #bd8aff;
+    box-shadow: 0 0 12px #bd8aff;
+    animation: dotPulse 1.7s infinite;
+}
+
+@keyframes dotPulse {
+    50% { opacity: .3; }
+}
+
+.hero-heading {
+    margin: 0 0 23px;
+    color: white;
+    font-size: clamp(48px, 6vw, 78px);
+    font-weight: 850;
+    line-height: 1.06;
+    letter-spacing: -3.5px;
+}
+
+.hero-heading span {
+    background: linear-gradient(100deg, #d7b9ff, #a278fa, #8b91ff);
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    animation: gradientMove 5s linear infinite;
+}
+
+@keyframes gradientMove {
+    to { background-position: 200% center; }
+}
+
+.hero-description {
+    max-width: 460px;
+    color: #aaa0ba;
+    font-size: 15px;
+    line-height: 1.9;
+}
+
+/* VINYL ARTWORK */
+
+.vinyl-area {
+    position: relative;
+    width: 270px;
+    height: 245px;
+    margin: 18px 0 5px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.vinyl-halo {
+    position: absolute;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 1px solid #bd91ff23;
+    box-shadow:
+        0 0 55px #873ee51b,
+        inset 0 0 55px #873ee51b;
+    animation: haloPulse 4s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+    50% {
+        transform: scale(1.1);
+        opacity: .5;
+    }
+}
+
+.vinyl {
+    position: relative;
+    width: 183px;
+    height: 183px;
+    border-radius: 50%;
+    background:
+        repeating-radial-gradient(
+            circle,
+            #24202f 0px,
+            #100d18 2px,
+            #29243a 3px,
+            #12101b 5px
+        );
+    border: 2px solid #68508b;
+    box-shadow: 0 0 40px #9a54e54c, 0 18px 40px #0009;
+    animation: vinylSpin 16s linear infinite;
+}
+
+@keyframes vinylSpin {
+    to { transform: rotate(360deg); }
+}
+
+.vinyl-label {
+    position: absolute;
+    width: 78px;
+    height: 78px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: linear-gradient(145deg, #d8bcff, #944de2, #5132ac);
+    box-shadow: 0 0 25px #ad68fc66;
+}
+
+.vinyl-center {
+    position: absolute;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #100c19;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.vinyl-note {
+    position: absolute;
+    color: #d5b7ff;
+    font-size: 26px;
+    animation: noteFloat 3s ease-in-out infinite alternate;
+}
+
+.note-one { top: 6px; right: 4px; }
+.note-two { bottom: 1px; left: 4px; animation-delay: -1.5s; }
+
+@keyframes noteFloat {
+    to {
+        transform: translateY(-12px) rotate(12deg);
+        opacity: .5;
+    }
+}
+
+/* EQUALIZER */
+
+.equalizer {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 40px;
+    margin-top: 8px;
+}
+
+.equalizer span {
+    display: block;
+    width: 4px;
+    height: 13px;
+    border-radius: 6px;
+    background: linear-gradient(to top, #7738db, #e4c9ff);
+    animation: equalize .8s ease-in-out infinite alternate;
+}
+
+.equalizer span:nth-child(2n) { animation-delay: -.3s; }
+.equalizer span:nth-child(3n) { animation-delay: -.55s; }
+
+@keyframes equalize {
+    to { height: 37px; }
+}
+
+/* RIGHT SECTION */
+
+.card-section {
+    animation: enterRight 1s ease both;
+}
+
+@keyframes enterRight {
+    from {
+        opacity: 0;
+        transform: translateX(35px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.login-card {
+    position: relative;
+    padding: 43px 38px 38px;
+    border: 1px solid #c4a4ff2b;
+    border-radius: 26px;
+    background: linear-gradient(145deg, #21182fef, #110d1df5);
+    box-shadow:
+        0 25px 80px #0008,
+        0 0 50px #873ee51a,
+        inset 0 1px #ffffff12;
+    backdrop-filter: blur(22px);
+}
+
+.login-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 17%;
+    right: 17%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #c4a4ff, #8352ee, transparent);
+}
+
+.login-icon {
+    width: 55px;
+    height: 55px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 17px;
+    background: linear-gradient(145deg, #a56cf0, #6636bd);
+    box-shadow: 0 0 28px #873ee55c;
+}
+
+.login-icon svg {
+    width: 26px;
+    height: 26px;
+}
+
+.login-card h2 {
+    text-align: center;
+    color: white;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 9px;
+}
+
+.login-subtitle {
+    margin-bottom: 31px;
+    text-align: center;
+    color: #a99dbb;
+    font-size: 12px;
+}
+
+/* INPUTS */
+
+.form-field {
+    margin-bottom: 21px;
+}
+
+.form-field label {
+    display: block;
+    color: #ded5ed;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .7px;
+    margin-bottom: 9px;
+}
+
+.input-box {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    color: #9881bc;
+    display: flex;
+    pointer-events: none;
+}
+
+.input-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.form-input {
+    width: 100%;
+    height: 54px;
+    box-sizing: border-box;
+    padding: 0 17px 0 46px;
+    color: #fff;
+    background: #0c0915;
+    border: 1px solid #40334e;
+    border-radius: 11px;
+    outline: none;
+    font-size: 13px;
+    transition: .25s ease;
+}
+
+.form-input::placeholder {
+    color: #746982;
+}
+
+.form-input:focus {
+    border-color: #b185ff;
+    background: #151020;
+    box-shadow: 0 0 0 4px #9b5cf51f, 0 0 24px #9b5cf514;
+}
+
+.password-input {
+    padding-right: 75px;
+}
+
+.password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    border: 0;
+    padding: 5px;
+    color: #c5a4ff;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    color: white;
+}
+
+/* BUTTON */
+
+.login-button {
+    width: 100%;
+    height: 54px;
+    margin-top: 9px;
+    border: 0;
+    border-radius: 11px;
+    color: white;
+    background: linear-gradient(110deg, #9d61ed, #793ddd, #6045c5);
+    background-size: 200% auto;
+    font-size: 13px;
+    font-weight: 850;
+    letter-spacing: 1.4px;
+    box-shadow: 0 9px 30px #853cdd42;
+    cursor: pointer;
+    transition: .3s ease;
+}
+
+.login-button:hover {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px #994fe66e;
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.button-arrow {
+    margin-left: 8px;
+    display: inline-block;
+    transition: transform .25s;
+}
+
+.login-button:hover .button-arrow {
+    transform: translateX(5px);
+}
+
+/* CARD FOOTER */
+
+.login-divider {
+    height: 1px;
+    margin: 27px 0 22px;
+    background: linear-gradient(90deg, transparent, #554367, transparent);
+}
+
+.register-text {
+    text-align: center;
+    color: #a99dbb;
+    font-size: 12px;
+}
+
+.register-text a {
+    color: #d3b5ff;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.register-text a:hover {
+    color: white;
+    text-shadow: 0 0 15px #b185ff;
+}
+
+/* FOOTER */
+
+.moodify-footer {
+    text-align: center;
+    padding: 13px 15px 22px;
+    color: #716780;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+}
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 950px) {
+    .moodify-main {
+        grid-template-columns: 1fr;
+        max-width: 490px;
+        gap: 35px;
+        padding-top: 35px;
+    }
+
+    .hero-section {
+        text-align: center;
+    }
+
+    .hero-heading {
+        font-size: 53px;
+    }
+
+    .hero-description {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .vinyl-area {
+        margin: 10px auto;
+    }
+
+    .equalizer {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 520px) {
+    .moodify-header {
+        height: 76px;
+        padding: 0 6%;
+    }
+
+    .brand {
+        font-size: 21px;
+    }
+
+    .header-caption {
+        font-size: 8px;
+        letter-spacing: 1px;
+    }
+
+    .moodify-main {
+        width: 90%;
+        padding: 27px 0 40px;
+    }
+
+    .hero-heading {
+        font-size: 43px;
+        letter-spacing: -2px;
+    }
+
+    .hero-description {
+        font-size: 13px;
+    }
+
+    .login-card {
+        padding: 34px 23px;
+    }
+}
+
+/* ACCESSIBILITY */
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+    outline: 2px solid #d5bcff;
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .moodify-page *,
+    .moodify-page::before,
+    .moodify-page::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+</style>
+
+
+<div class="moodify-page">
+
+    <div class="glow glow-one"></div>
+    <div class="glow glow-two"></div>
+
+    <div class="particle p1"></div>
+    <div class="particle p2"></div>
+    <div class="particle p3"></div>
+    <div class="particle p4"></div>
+
+
+    <!-- HEADER -->
+
+    <header class="moodify-header">
+
+        <a href="{{ url_for('auth.login') }}" class="brand">
+
+            <div class="brand-icon">
+                <svg viewBox="0 0 30 30" fill="none">
+                    <path d="M5 18V12M10 23V7M15 27V3M20 20V10M25 16V14"
+                          stroke="white"
+                          stroke-width="3"
+                          stroke-linecap="round"/>
+                </svg>
+            </div>
+
+            MOODIFY
+
+        </a>
+
+        <div class="header-caption">
+            MUSIC FOR EVERY MOOD
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <main class="moodify-main">
+
+
+        <!-- LEFT HERO -->
+
+        <section class="hero-section">
+
+            <div class="hero-tag">
+                <span class="tag-dot"></span>
+                A PERSONAL MUSIC EXPERIENCE
+            </div>
+
+            <h1 class="hero-heading">
+                Your mood.<br>
+                Your music.<br>
+                <span>Your universe.</span>
+            </h1>
+
+            <p class="hero-description">
+                Every feeling has its own rhythm.
+                Discover music that understands your mood,
+                explore your favourite sounds and find
+                your own musical space.
+            </p>
+
+
+            <!-- VINYL PLAYER ART -->
+
+            <div class="vinyl-area">
+
+                <div class="vinyl-halo"></div>
+
+                <div class="vinyl">
+                    <div class="vinyl-label"></div>
+                    <div class="vinyl-center"></div>
+                </div>
+
+                <span class="vinyl-note note-one">✦</span>
+                <span class="vinyl-note note-two">♫</span>
+
+            </div>
+
+
+            <!-- EQUALIZER -->
+
+            <div class="equalizer" aria-hidden="true">
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+                <span></span><span></span><span></span>
+            </div>
+
+        </section>
+
+
+        <!-- LOGIN CARD -->
+
+        <section class="card-section">
+
+            <div class="login-card">
+
+                <div class="login-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="4"
+                                stroke="white"
+                                stroke-width="1.8"/>
+                        <path d="M4 21V19C4 16.79 5.79 15 8 15H16C18.21 15 20 16.79 20 19V21"
+                              stroke="white"
+                              stroke-width="1.8"
+                              stroke-linecap="round"/>
+                    </svg>
+                </div>
+
+                <h2>Welcome Back</h2>
+
+                <p class="login-subtitle">
+                    Your musical journey continues here.
+                </p>
+
+
+                <form method="POST"
+                      action="{{ url_for('auth.login') }}">
+
+                    <div class="form-field">
+
+                        <label for="email">EMAIL ADDRESS</label>
+
+                        <div class="input-box">
+
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="5" width="18" height="14"
+                                          rx="2"
+                                          stroke="currentColor"
+                                          stroke-width="1.7"/>
+                                    <path d="M4 7L12 13L20 7"
+                                          stroke="currentColor"
+                                          stroke-width="1.7"
+                                          stroke-linecap="round"/>
+                                </svg>
+                            </span>
+
+                            <input
+                                type="email"
+                                class="form-input"
+                                id="email"
+                                name="email"
+                                placeholder="Enter your email address"
+                                autocomplete="email"
+                                maxlength="150"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-field">
+
+                        <label for="password">PASSWORD</label>
+
+                        <div class="input-box">
+
+                            <span class="input-icon">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <rect x="4" y="10" width="16" height="11"
+                                          rx="2"
+                                          stroke="currentColor"
+                                          stroke-width="1.7"/>
+                                    <path d="M8 10V7C8 4.79 9.79 3 12 3C14.21 3 16 4.79 16 7V10"
+                                          stroke="currentColor"
+                                          stroke-width="1.7"
+                                          stroke-linecap="round"/>
+                                </svg>
+                            </span>
+
+                            <input
+                                type="password"
+                                class="form-input password-input"
+                                id="password"
+                                name="password"
+                                placeholder="Enter your password"
+                                autocomplete="current-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                id="togglePassword"
+                                aria-controls="password"
+                                aria-pressed="false"
+                            >
+                                SHOW
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <button type="submit" class="login-button">
+                        SIGN IN
+                        <span class="button-arrow">→</span>
+                    </button>
+
+                </form>
+
+
+                <div class="login-divider"></div>
+
+
+                <div class="register-text">
+                    New to MOODIFY?
+
+                    <a href="{{ url_for('auth.register') }}">
+                        Create your account
+                    </a>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <footer class="moodify-footer">
+        MADE WITH MUSIC · MADE FOR EVERY MOOD · MOODIFY
+    </footer>
+
+</div>
+
+
+<script>
+(function () {
+
+    const toggleButton = document.getElementById("togglePassword");
+    const passwordField = document.getElementById("password");
+
+    if (!toggleButton || !passwordField) {
+        return;
+    }
+
+    toggleButton.addEventListener("click", function () {
+
+        const isHidden = passwordField.type === "password";
+
+        passwordField.type = isHidden ? "text" : "password";
+
+        toggleButton.textContent = isHidden ? "HIDE" : "SHOW";
+
+        toggleButton.setAttribute(
+            "aria-pressed",
+            String(isHidden)
+        );
+
+    });
+
+})();
 </script>
 
+{% endblock %}
