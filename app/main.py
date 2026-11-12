@@ -15,7 +15,9 @@ main_bp = Blueprint('main', __name__, template_folder='templates')
 
 @main_bp.route('/')
 def index():
-    return redirect(url_for('main.home'))
+    # Public entry point: open the designed login screen.
+    # The Create Account link on that page opens registration.
+    return redirect(url_for('auth.login'))
 
 
 @main_bp.route('/home')
