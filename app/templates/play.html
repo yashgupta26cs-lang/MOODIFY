@@ -1,53 +1,104 @@
 {% extends 'base.html' %}
-{% block title %}Play - MOODIFY{% endblock %}
+{% block title %}{{ song.title }} | MOODIFY{% endblock %}
 {% block content %}
-<h2 class="mb-4">{{ song.title }} - {{ song.artist }}</h2>
-<div class="mb-3">
-  {% if song.audio_file %}
-  <audio id="audioPlayer" src="{{ url_for('static', filename='media/' + song.audio_file) }}" controls></audio>
-  {% else %}
-  <p>No audio available.</p>
-  {% endif %}
+<style>
+:root{--player-night:#0a1821;--player-mint:#83e8c7;--player-muted:#9bb0b1}
+body:has(.player-page){margin:0;background:var(--player-night);color:#f7f7f1;overflow-x:hidden;font-family:"Segoe UI",Arial,sans-serif}
+body:has(.player-page)>nav.navbar{display:none!important}
+body:has(.player-page)>.container{max-width:none;width:100%;padding:0;margin:0}
+body:has(.player-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
+.player-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--player-night)}
+.player-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
+.player-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}.player-brand:hover{color:#fff}
+.player-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;border:1px solid #83e8c788;color:var(--player-mint);background:linear-gradient(145deg,#21483f,#102b30);font-size:23px}
+.player-nav{display:flex;gap:6px;flex-wrap:wrap}.player-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}
+.player-nav a:hover,.player-nav a.active{color:var(--player-mint);background:#83e8c711}
+.player-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}
+.player-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--player-night);background:var(--player-mint)}
+.player-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
+.player-main{width:min(1100px,92%);margin:0 auto;padding:36px 0 55px}
+.player-back{display:inline-flex;align-items:center;gap:8px;margin-bottom:18px;color:var(--player-mint);text-decoration:none;font-size:10px;font-weight:900;letter-spacing:1px}
+.player-shell{display:grid;grid-template-columns:.9fr 1.1fr;gap:32px;align-items:center;padding:clamp(22px,4vw,43px);border:1px solid #83e8c72e;border-radius:24px;background:radial-gradient(circle at 23% 45%,#83e8c71b,transparent 35%),linear-gradient(120deg,#183a3c,#102630 62%,#142b36);box-shadow:0 24px 65px #0003}
+.player-art{min-height:310px;position:relative;display:grid;place-items:center;overflow:hidden;border:1px solid #ffffff18;border-radius:18px;background:linear-gradient(145deg,#285d58,#172e39)}
+.player-art.moonlight{background:linear-gradient(145deg,#465675,#17283c)}
+.player-art:before,.player-art:after{content:"";position:absolute;width:280px;height:280px;border:1px solid #ffffff22;border-radius:50%}
+.player-art:before{transform:translate(-70px,80px)}.player-art:after{transform:translate(90px,-85px)}
+.player-disc{width:205px;height:205px;position:relative;z-index:1;display:grid;place-items:center;border:1px solid #83e8c777;border-radius:50%;background:repeating-radial-gradient(circle,#07141c 0 9px,#1c353a 10px 11px);box-shadow:0 18px 40px #0006}
+.player-disc:after{content:"M";width:52px;height:52px;display:grid;place-items:center;border:1px solid #b7f6df;border-radius:50%;color:#102630;background:var(--player-mint);font-size:20px;font-weight:950}
+.player-disc.is-playing{animation:playerSpin 10s linear infinite}
+@keyframes playerSpin{to{transform:rotate(360deg)}}
+.player-art-caption{position:absolute;z-index:2;bottom:18px;left:18px;color:#dcece5;font-size:9px;font-weight:900;letter-spacing:2px}
+.player-copy{min-width:0}.player-kicker{color:var(--player-mint);font-size:9px;font-weight:900;letter-spacing:2.4px;margin-bottom:12px}
+.player-copy h1{margin:0;color:#f7f7f1;font-size:clamp(30px,4vw,43px);line-height:1.08;font-weight:850;letter-spacing:-1.5px}
+.player-artist{margin:11px 0 0;color:#c4d4d1;font-size:14px;font-weight:700}.player-composer{margin:6px 0 0;color:#8fa7a8;font-size:11px}
+.player-description{margin:17px 0;color:#b2c3c0;font-size:12px;line-height:1.8}
+.player-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:19px}.player-tags span{padding:6px 10px;border-radius:20px;color:#a9e7d2;background:#83e8c715;font-size:9px;font-weight:850}
+.player-audio{width:100%;margin:7px 0 13px}.player-audio audio{display:block;width:100%;height:46px;accent-color:var(--player-mint)}
+.player-controls{display:flex;align-items:center;gap:10px;margin-top:5px}
+.player-controls label{color:#b4c6c5;font-size:10px;font-weight:800}
+.player-controls select{height:35px;padding:0 10px;border:1px solid #ffffff24;border-radius:8px;color:#eef5f0;background:#0b1b23;font-size:10px}
+.player-no-audio{padding:14px;border:1px dashed #83e8c766;border-radius:11px;color:#c2d4ce;font-size:11px;line-height:1.6}
+.player-rights{margin-top:18px;padding:17px 19px;border:1px solid #ffffff18;border-radius:14px;background:#ffffff08}
+.player-rights h2{margin:0 0 8px;color:#f1f5ef;font-size:13px;font-weight:850}
+.player-rights p{margin:0;color:#9fb4b2;font-size:10px;line-height:1.75}
+.player-rights a{color:var(--player-mint);text-decoration:none}
+.player-footer{padding:26px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
+@media(max-width:800px){.player-topbar{flex-wrap:wrap}.player-nav{order:3;width:100%}.player-shell{grid-template-columns:1fr}.player-art{min-height:245px}}
+@media(max-width:620px){.player-topbar{padding:11px 4%}.player-brand{font-size:17px}.player-account span:not(.player-avatar),.player-logout{display:none}.player-main{padding-top:25px}.player-shell{padding:18px;gap:22px}.player-disc{width:165px;height:165px}}
+</style>
+<div class="player-page">
+<header class="player-topbar">
+<a class="player-brand" href="{{ url_for('main.home') }}"><span class="player-logo">♫</span> MOODIFY</a>
+<nav class="player-nav" aria-label="Main navigation"><a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}" class="active">Music</a><a href="{{ url_for('main.playlist') }}">Playlists</a><a href="{{ url_for('main.mood_history') }}">Mood journal</a><a href="{{ url_for('main.profile') }}">Profile</a></nav>
+<div class="player-account"><span class="player-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="player-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
+</header>
+<main class="player-main">
+<a class="player-back" href="{{ url_for('main.music') }}">← BACK TO MUSIC LIBRARY</a>
+<section class="player-shell">
+<div class="player-art {{ 'moonlight' if song.art_class is defined and song.art_class == 'moonlight' else '' }}"><div class="player-disc" id="playerDisc"></div><div class="player-art-caption">MOODIFY · NOW PLAYING</div></div>
+<div class="player-copy">
+<div class="player-kicker">YOUR LISTENING SPACE</div><h1>{{ song.title }}</h1><p class="player-artist">{{ song.artist }}</p>
+{% if song.composer is defined %}<p class="player-composer">Composer: {{ song.composer }}</p>{% endif %}
+<p class="player-description">{% if song.description is defined %}{{ song.description }}{% else %}Enjoy your selected track in MOODIFY.{% endif %}</p>
+<div class="player-tags">
+{% if song.genre is defined and song.genre %}<span>{{ song.genre }}</span>{% endif %}
+{% if song.mood is defined and song.mood %}<span>{{ song.mood }}</span>{% endif %}
+{% if song.language is defined and song.language %}<span>{{ song.language }}</span>{% endif %}
+{% if song.duration is defined and song.duration %}<span>{{ song.duration }}</span>{% endif %}
 </div>
-<div class="mb-3">
-  {% if song.lyrics %}
-  <button class="btn btn-secondary" id="toggleLyricsBtn">Show Lyrics</button>
-  <pre id="lyrics" style="display:none; white-space:pre-wrap; background:#f8f9fa; padding:1rem; border:1px solid #ddd; margin-top:1rem;">{{ song.lyrics }}</pre>
-  {% endif %}
+{% if audio_url %}
+<div class="player-audio">
+<audio id="audioPlayer" controls preload="metadata">
+<source src="{{ audio_url }}" type="audio/mpeg">
+{% if fallback_audio_url %}<source src="{{ fallback_audio_url }}" type="audio/ogg">{% endif %}
+Your browser does not support audio playback.
+</audio>
 </div>
-<div class="mb-3">
-  {% if song.video_file %}
-  <video width="100%" controls>
-    <source src="{{ url_for('static', filename='media/' + song.video_file) }}" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  {% endif %}
+<div class="player-controls"><label for="playbackSpeed">PLAYBACK SPEED</label><select id="playbackSpeed"><option value="1" selected>Normal</option><option value="0.85">0.85×</option><option value="0.75">0.75×</option><option value="1.25">1.25×</option></select></div>
+{% elif song.audio_file is defined and song.audio_file %}
+<div class="player-audio"><audio id="audioPlayer" controls preload="metadata"><source src="{{ url_for('static', filename='media/' + song.audio_file) }}">Your browser does not support audio playback.</audio></div>
+{% else %}
+<div class="player-no-audio">An audio file has not been connected to this track yet.</div>
+{% endif %}
 </div>
-<!-- Simple playback controls -->
-<div class="row">
-  <div class="col-md-4">
-    <label for="playbackSpeed" class="form-label">Speed</label>
-    <select id="playbackSpeed" class="form-select">
-      <option value="1" selected>Normal</option>
-      <option value="0.75">0.75x</option>
-      <option value="1.25">1.25x</option>
-      <option value="1.5">1.5x</option>
-    </select>
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Reverb</label>
-    <button id="reverbBtn" class="btn btn-outline-primary w-100">Toggle Reverb</button>
-  </div>
-  <div class="col-md-4">
-    <label class="form-label">Karaoke</label>
-    <button id="karaokeBtn" class="btn btn-outline-primary w-100">Toggle Karaoke</button>
-  </div>
-</div>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</section>
+{% if credit or license_label %}
+<section class="player-rights"><h2>Track source and usage</h2>{% if credit %}<p>{{ credit }}</p>{% endif %}
+{% if license_label %}<p style="margin-top:7px">Rights: {{ license_label }} · <a href="{{ license_url }}" target="_blank" rel="noopener">View licence</a> · <a href="{{ source_url }}" target="_blank" rel="noopener">View original file</a></p>{% endif %}</section>
+{% endif %}
+<footer class="player-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
+</main></div>
 <script>
-document.getElementById('toggleLyricsBtn')?.addEventListener('click', function(){
-  const el = document.getElementById('lyrics');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-});
+(function(){
+ const audio=document.getElementById('audioPlayer');
+ const disc=document.getElementById('playerDisc');
+ const speed=document.getElementById('playbackSpeed');
+ if(audio&&disc){
+   audio.addEventListener('play',()=>disc.classList.add('is-playing'));
+   audio.addEventListener('pause',()=>disc.classList.remove('is-playing'));
+   audio.addEventListener('ended',()=>disc.classList.remove('is-playing'));
+ }
+ if(audio&&speed){speed.addEventListener('change',()=>{audio.playbackRate=Number(speed.value)||1;});}
+})();
 </script>
 {% endblock %}
