@@ -1,35 +1,97 @@
 {% extends 'base.html' %}
-{% block title %}Music - MOODIFY{% endblock %}
+{% block title %}Music Library | MOODIFY{% endblock %}
 {% block content %}
-<h2 class="mb-4">Browse Music</h2>
-<form class="row g-3 mb-4" method="GET" action="{{ url_for('main.music') }}">
-  <div class="col-md-3">
-    <input type="text" class="form-control" name="language" placeholder="Language" value="{{ request.args.get('language','') }}">
-  </div>
-  <div class="col-md-3">
-    <input type="text" class="form-control" name="mood" placeholder="Mood" value="{{ request.args.get('mood','') }}">
-  </div>
-  <div class="col-md-3">
-    <input type="text" class="form-control" name="singer" placeholder="Singer/Artist" value="{{ request.args.get('singer','') }}">
-  </div>
-  <div class="col-md-3">
-    <button type="submit" class="btn btn-primary w-100">Search</button>
-  </div>
+<style>
+:root{--lib-night:#0a1821;--lib-mint:#83e8c7;--lib-muted:#9bb0b1}
+body:has(.library-page){margin:0;background:var(--lib-night);color:#f7f7f1;overflow-x:hidden;font-family:"Segoe UI",Arial,sans-serif}
+body:has(.library-page)>nav.navbar{display:none!important}
+body:has(.library-page)>.container{max-width:none;width:100%;padding:0;margin:0}
+body:has(.library-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
+.library-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--lib-night)}
+.library-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
+.library-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}
+.library-brand:hover{color:#fff}.library-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;background:linear-gradient(145deg,#21483f,#102b30);border:1px solid #83e8c788;color:var(--lib-mint);font-size:23px}
+.library-nav{display:flex;gap:6px;flex-wrap:wrap}.library-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}
+.library-nav a:hover,.library-nav a.active{color:var(--lib-mint);background:#83e8c711}
+.library-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}
+.library-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--lib-night);background:var(--lib-mint)}
+.library-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
+.library-main{width:min(1180px,92%);margin:0 auto;padding:42px 0 55px}
+.library-hero{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:25px}
+.library-kicker{color:var(--lib-mint);font-size:9px;font-weight:900;letter-spacing:2.5px;margin-bottom:12px}
+.library-hero h1{margin:0;color:#f7f7f1;font-size:clamp(30px,4vw,43px);line-height:1.08;letter-spacing:-1.5px;font-weight:850}
+.library-hero h1 span{color:var(--lib-mint)}.library-hero p{max-width:620px;margin:12px 0 0;color:var(--lib-muted);font-size:13px;line-height:1.7}
+.library-count{min-width:115px;padding:15px 18px;border:1px solid #83e8c733;border-radius:14px;color:var(--lib-mint);background:#83e8c70d;text-align:center}
+.library-count strong{display:block;font-size:27px;line-height:1}.library-count small{display:block;margin-top:7px;color:#a7bbba;font-size:8px;font-weight:900;letter-spacing:1.3px}
+.library-filters{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr auto;gap:9px;padding:12px;margin:25px 0 30px;border:1px solid #ffffff17;border-radius:15px;background:#ffffff08}
+.library-filters input,.library-filters select{width:100%;min-width:0;height:43px;padding:0 12px;border:1px solid #ffffff18;border-radius:9px;outline:0;color:#edf5ef;background:#0b1b23;font-size:11px}
+.library-filters input::placeholder{color:#849a9c}.library-filters select option{color:#17252b}
+.library-filters input:focus,.library-filters select:focus{border-color:var(--lib-mint)}
+.library-filter-btn{height:43px;padding:0 17px;border:0;border-radius:9px;color:var(--lib-night);background:var(--lib-mint);font-size:10px;font-weight:950;cursor:pointer}
+.library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.library-card{overflow:hidden;border:1px solid #ffffff18;border-radius:19px;background:linear-gradient(145deg,#ffffff0c,#ffffff05);transition:.22s ease}
+.library-card:hover{transform:translateY(-4px);border-color:#83e8c75b;box-shadow:0 18px 45px #0003}
+.library-art{min-height:185px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(circle at 25% 30%,#83e8c744,transparent 28%),linear-gradient(120deg,#214a49,#102630 68%,#182c3c)}
+.library-art.moonlight{background:radial-gradient(circle at 70% 25%,#b2c8e344,transparent 25%),linear-gradient(120deg,#27344d,#101c2d 65%,#29364a)}
+.library-art:before,.library-art:after{content:"";position:absolute;width:230px;height:230px;border:1px solid #ffffff24;border-radius:50%}
+.library-art:before{transform:translate(-70px,55px)}.library-art:after{transform:translate(100px,-80px)}
+.library-vinyl{width:142px;height:142px;position:relative;z-index:1;border:1px solid #ffffff50;border-radius:50%;background:repeating-radial-gradient(circle,#0b1720 0 7px,#1c353a 8px 9px);box-shadow:0 15px 35px #0005}
+.library-vinyl:after{content:"";position:absolute;inset:39%;border:1px solid #83e8c788;border-radius:50%;background:var(--lib-mint)}
+.moonlight .library-vinyl:after{background:#c3d1ed;border-color:#e0e7fa}
+.library-art-label{position:absolute;z-index:2;bottom:17px;left:18px;color:#dcece5;font-size:9px;font-weight:900;letter-spacing:2px}
+.library-card-body{padding:20px}.library-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:12px}
+.library-chip{padding:5px 9px;border-radius:20px;color:#a9e7d2;background:#83e8c715;font-size:8px;font-weight:900;letter-spacing:.5px}
+.library-duration{margin-left:auto;color:#91a7a9;font-size:10px}
+.library-card h2{margin:0 0 6px;color:#f5f6ef;font-size:21px;font-weight:850;letter-spacing:-.5px}
+.library-artist{margin:0;color:#a5b7b7;font-size:11px}.library-composer{margin:5px 0 0;color:#7f999b;font-size:10px}
+.library-description{min-height:38px;margin:14px 0 17px;color:#b0c1bf;font-size:11px;line-height:1.7}
+.library-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.library-listen{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:9px;color:var(--lib-night);background:var(--lib-mint);text-decoration:none;font-size:9px;font-weight:950;letter-spacing:.7px}
+.library-listen:hover{color:var(--lib-night);background:#a6f2d9}
+.library-license{max-width:145px;color:#8fa6a5;font-size:9px;line-height:1.5;text-align:right}
+.library-credit{margin-top:25px;padding:16px 18px;border:1px solid #ffffff15;border-radius:13px;color:#91a6a7;background:#ffffff06;font-size:10px;line-height:1.7}
+.library-credit strong{color:#dceae4}.library-credit a{color:var(--lib-mint);text-decoration:none}
+.library-empty{grid-column:1/-1;padding:35px;border:1px dashed #83e8c755;border-radius:16px;color:#a8bbba;text-align:center;font-size:12px;line-height:1.7}
+.library-empty strong{display:block;color:#f1f5ee;font-size:16px;margin-bottom:7px}
+.library-footer{padding:28px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
+@media(max-width:900px){.library-topbar{flex-wrap:wrap}.library-nav{order:3;width:100%}.library-filters{grid-template-columns:1fr 1fr}.library-filters input{grid-column:1/-1}}
+@media(max-width:620px){.library-topbar{padding:11px 4%}.library-brand{font-size:17px}.library-account span:not(.library-avatar),.library-logout{display:none}.library-main{padding-top:28px}.library-hero{align-items:flex-start;flex-direction:column}.library-count{min-width:0;display:flex;align-items:center;gap:12px;text-align:left}.library-count small{margin:0}.library-grid{grid-template-columns:1fr}.library-filters{grid-template-columns:1fr}.library-filters input{grid-column:auto}}
+</style>
+<div class="library-page">
+<header class="library-topbar">
+<a class="library-brand" href="{{ url_for('main.home') }}"><span class="library-logo">♫</span> MOODIFY</a>
+<nav class="library-nav" aria-label="Main navigation">
+<a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}" class="active">Music</a><a href="{{ url_for('main.playlist') }}">Playlists</a><a href="{{ url_for('main.mood_history') }}">Mood journal</a><a href="{{ url_for('main.profile') }}">Profile</a>
+</nav>
+<div class="library-account"><span class="library-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="library-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
+</header>
+<main class="library-main">
+<section class="library-hero">
+<div><div class="library-kicker">THE MOODIFY SOUND LIBRARY</div><h1>Find a sound for<br><span>your kind of moment.</span></h1><p>Explore complete instrumental recordings selected for this starter collection. Search by title, composer, genre or mood, then open a track to listen.</p></div>
+<div class="library-count"><strong>{{ songs|length }}</strong><small>TRACKS MATCHED</small></div>
+</section>
+<form class="library-filters" method="GET" action="{{ url_for('main.music') }}">
+<input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="Search title, composer, artist or mood..." aria-label="Search music">
+<select name="genre" aria-label="Filter by genre"><option value="">All genres</option><option value="Classical" {% if request.args.get('genre') == 'Classical' %}selected{% endif %}>Classical</option></select>
+<select name="mood" aria-label="Filter by mood"><option value="">All moods</option><option value="Calm" {% if request.args.get('mood') == 'Calm' %}selected{% endif %}>Calm</option><option value="Reflective" {% if request.args.get('mood') == 'Reflective' %}selected{% endif %}>Reflective</option></select>
+<select name="language" aria-label="Filter by language"><option value="">All formats</option><option value="Instrumental" {% if request.args.get('language') == 'Instrumental' %}selected{% endif %}>Instrumental</option></select>
+<button class="library-filter-btn" type="submit">FILTER</button>
 </form>
-<div class="row">
-  {% for song in songs %}
-  <div class="col-md-4 mb-3">
-    <div class="card h-100">
-      <div class="card-body d-flex flex-column">
-        <h5 class="card-title">{{ song.title }}</h5>
-        <p class="card-text">{{ song.artist }}</p>
-        <p class="card-text"><small class="text-muted">{{ song.language }} • {{ song.mood }}</small></p>
-        <a href="{{ url_for('main.play', music_id=song.id) }}" class="mt-auto btn btn-outline-primary">Play</a>
-      </div>
-    </div>
-  </div>
-  {% else %}
-    <p>No songs found.</p>
-  {% endfor %}
+<section class="library-grid" aria-label="Music tracks">
+{% for song in songs %}
+<article class="library-card">
+<div class="library-art {{ 'moonlight' if song.art_class == 'moonlight' else '' }}"><div class="library-vinyl"></div><div class="library-art-label">MOODIFY · {{ song.art_mark }}</div></div>
+<div class="library-card-body">
+<div class="library-meta"><span class="library-chip">{{ song.genre }}</span><span class="library-chip">{{ song.mood }}</span><span class="library-duration">{{ song.duration }}</span></div>
+<h2>{{ song.title }}</h2><p class="library-artist">{{ song.artist }}</p><p class="library-composer">Composer: {{ song.composer }}</p><p class="library-description">{{ song.description }}</p>
+<div class="library-card-bottom"><a class="library-listen" href="{{ url_for('main.listen', slug=song.slug) }}">LISTEN TO FULL TRACK →</a><span class="library-license">{{ song.license_label }}</span></div>
 </div>
+</article>
+{% else %}
+<div class="library-empty"><strong>No tracks match those filters.</strong>Try clearing one of the filters or searching for “Bach” or “Beethoven”.<br><a class="library-listen" style="margin-top:14px" href="{{ url_for('main.music') }}">CLEAR FILTERS</a></div>
+{% endfor %}
+</section>
+<div class="library-credit"><strong>About this starter collection:</strong> These first tracks are public-domain recordings sourced from Wikimedia Commons. MOODIFY shows the source and rights information on each player page. More licensed tracks and languages can be added as the catalogue grows.</div>
+<footer class="library-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
+</main></div>
 {% endblock %}
