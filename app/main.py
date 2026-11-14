@@ -1,8 +1,11 @@
 
 """Main application routes"""
 
+from datetime import datetime, timezone
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 
 from . import db
 from .models import Music, Playlist, MoodHistory
@@ -23,36 +26,100 @@ def index():
 @main_bp.route('/home')
 @login_required
 def home():
-    songs = Music.query.limit(5).all()
+    # Rank the available tracks using the preferences saved during onboarding.
+    all_songs = Music.query.order_by(Music.id.desc()).limit(100).all()
+
+    favourite_singers = [
+        name.strip().casefold()
+        for name in (current_user.favorite_singer or '').split(',')
+        if name.strip()
+    ]
+
+    def contains_preference(value, preference):
+        return bool(
+            value
+            and preference
+            and preference.casefold() in value.casefold()
+        )
+
+    def preference_score(song):
+        score = 0
+
+        if contains_preference(song.language, current_user.preferred_language):
+            score += 2
+
+        if contains_preference(song.mood, current_user.preferred_mood):
+            score += 3
+
+        artist = (song.artist or '').casefold()
+        if any(singer in artist for singer in favourite_singers):
+            score += 3
+
+        return score, song.id
+
+    songs = sorted(all_songs, key=preference_score, reverse=True)[:6]
+
     return render_template('home.html', songs=songs)
+
+
+@main_bp.route('/mood-checkin', methods=['POST'])
+@login_required
+def mood_checkin():
+    mood = request.form.get('mood', '').strip()
+
+    allowed_moods = {
+        'Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic',
+        'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous'
+    }
+
+    if mood not in allowed_moods:
+        flash('Please choose a mood from the list.')
+        return redirect(url_for('main.home'))
+
+    current_user.preferred_mood = mood
+
+    mood_entry = MoodHistory(
+        mood=mood,
+        timestamp=datetime.now(timezone.utc).replace(tzinfo=None),
+        user_id=current_user.id
+    )
+
+    db.session.add(mood_entry)
+    db.session.commit()
+
+    flash('Your mood has been updated. Your music mix will adapt!')
+    return redirect(url_for('main.home'))
 
 
 @main_bp.route('/music', methods=['GET'])
 @login_required
 def music():
 
-    language = request.args.get('language')
-    mood = request.args.get('mood')
-    singer = request.args.get('singer')
+    language = request.args.get('language', '').strip()
+    mood = request.args.get('mood', '').strip()
+    singer = request.args.get('singer', '').strip()
+    search_text = request.args.get('q', '').strip()
 
     query = Music.query
 
     if language:
-        query = query.filter(
-            Music.language.ilike(f'%{language}%')
-        )
+        query = query.filter(Music.language.ilike(f'%{language}%'))
 
     if mood:
-        query = query.filter(
-            Music.mood.ilike(f'%{mood}%')
-        )
+        query = query.filter(Music.mood.ilike(f'%{mood}%'))
 
     if singer:
-        query = query.filter(
-            Music.artist.ilike(f'%{singer}%')
-        )
+        query = query.filter(Music.artist.ilike(f'%{singer}%'))
 
-    songs = query.all()
+    if search_text:
+        search_pattern = f'%{search_text}%'
+        query = query.filter(or_(
+            Music.title.ilike(search_pattern),
+            Music.artist.ilike(search_pattern),
+            Music.genre.ilike(search_pattern)
+        ))
+
+    songs = query.order_by(Music.title.asc()).all()
 
     return render_template('music.html', songs=songs)
 
