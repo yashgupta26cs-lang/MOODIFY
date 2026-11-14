@@ -3,12 +3,13 @@
 
 from datetime import datetime, timezone
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from . import db
 from .models import Music, Playlist, MoodHistory
+from .music_catalog import CATALOG_TRACKS
 
 import random
 
@@ -26,9 +27,7 @@ def index():
 @main_bp.route('/home')
 @login_required
 def home():
-    # Rank the available tracks using the preferences saved during onboarding.
-    all_songs = Music.query.order_by(Music.id.desc()).limit(100).all()
-
+    # Rank the curated, reusable tracks around each user's saved preferences.
     favourite_singers = [
         name.strip().casefold()
         for name in (current_user.favorite_singer or '').split(',')
@@ -36,29 +35,20 @@ def home():
     ]
 
     def contains_preference(value, preference):
-        return bool(
-            value
-            and preference
-            and preference.casefold() in value.casefold()
-        )
+        return bool(value and preference and preference.casefold() in str(value).casefold())
 
     def preference_score(song):
         score = 0
-
-        if contains_preference(song.language, current_user.preferred_language):
+        if contains_preference(song.get('language'), current_user.preferred_language):
             score += 2
-
-        if contains_preference(song.mood, current_user.preferred_mood):
+        if contains_preference(song.get('mood'), current_user.preferred_mood):
             score += 3
-
-        artist = (song.artist or '').casefold()
-        if any(singer in artist for singer in favourite_singers):
+        artist_text = f"{song.get('artist', '')} {song.get('composer', '')}".casefold()
+        if any(singer in artist_text for singer in favourite_singers):
             score += 3
+        return score, song['id']
 
-        return score, song.id
-
-    songs = sorted(all_songs, key=preference_score, reverse=True)[:6]
-
+    songs = sorted(CATALOG_TRACKS, key=preference_score, reverse=True)[:6]
     return render_template('home.html', songs=songs)
 
 
@@ -94,41 +84,81 @@ def mood_checkin():
 @main_bp.route('/music', methods=['GET'])
 @login_required
 def music():
+    language = request.args.get('language', '').strip().casefold()
+    mood = request.args.get('mood', '').strip().casefold()
+    genre = request.args.get('genre', '').strip().casefold()
+    singer = request.args.get('singer', '').strip().casefold()
+    search_text = request.args.get('q', '').strip().casefold()
 
-    language = request.args.get('language', '').strip()
-    mood = request.args.get('mood', '').strip()
-    singer = request.args.get('singer', '').strip()
-    search_text = request.args.get('q', '').strip()
+    songs = []
+    for song in CATALOG_TRACKS:
+        searchable = " ".join([
+            song.get('title', ''),
+            song.get('artist', ''),
+            song.get('composer', ''),
+            song.get('genre', ''),
+            song.get('mood', ''),
+        ]).casefold()
 
-    query = Music.query
+        if language and language not in song.get('language', '').casefold():
+            continue
+        if mood and mood not in song.get('mood', '').casefold():
+            continue
+        if genre and genre not in song.get('genre', '').casefold():
+            continue
+        if singer and singer not in (song.get('artist', '') + " " + song.get('composer', '')).casefold():
+            continue
+        if search_text and search_text not in searchable:
+            continue
 
-    if language:
-        query = query.filter(Music.language.ilike(f'%{language}%'))
-
-    if mood:
-        query = query.filter(Music.mood.ilike(f'%{mood}%'))
-
-    if singer:
-        query = query.filter(Music.artist.ilike(f'%{singer}%'))
-
-    if search_text:
-        search_pattern = f'%{search_text}%'
-        query = query.filter(or_(
-            Music.title.ilike(search_pattern),
-            Music.artist.ilike(search_pattern),
-            Music.genre.ilike(search_pattern)
-        ))
-
-    songs = query.order_by(Music.title.asc()).all()
+        songs.append(song)
 
     return render_template('music.html', songs=songs)
+
+
+def _render_catalog_track(song):
+    return render_template(
+        'play.html',
+        song=song,
+        audio_url=song.get('audio_url'),
+        fallback_audio_url=song.get('fallback_audio_url'),
+        source_url=song.get('source_url'),
+        license_label=song.get('license_label'),
+        license_url=song.get('license_url'),
+        credit=song.get('credit'),
+    )
+
+
+@main_bp.route('/listen/<slug>')
+@login_required
+def listen(slug):
+    song = next((track for track in CATALOG_TRACKS if track['slug'] == slug), None)
+    if song is None:
+        abort(404)
+    return _render_catalog_track(song)
 
 
 @main_bp.route('/play/<int:music_id>')
 @login_required
 def play(music_id):
+    # Curated catalogue IDs are used by Home and the Music Library.
+    catalog_song = next((track for track in CATALOG_TRACKS if track['id'] == music_id), None)
+    if catalog_song is not None:
+        return _render_catalog_track(catalog_song)
+
+    # Keep the original database-backed route working for existing saved links.
     song = Music.query.get_or_404(music_id)
-    return render_template('play.html', song=song)
+    audio_url = url_for('static', filename='media/' + song.audio_file) if song.audio_file else None
+    return render_template(
+        'play.html',
+        song=song,
+        audio_url=audio_url,
+        fallback_audio_url=None,
+        source_url=None,
+        license_label=None,
+        license_url=None,
+        credit=None,
+    )
 
 
 @main_bp.route('/playlist')
@@ -199,24 +229,9 @@ def profile():
 @main_bp.route('/recommendations')
 @login_required
 def recommendations():
-
-    all_ids = [
-        music.id for music in Music.query.all()
-    ]
-
-    sample_ids = random.sample(
-        all_ids,
-        min(5, len(all_ids))
-    )
-
-    songs = Music.query.filter(
-        Music.id.in_(sample_ids)
-    ).all()
-
-    return render_template(
-        'recommendations.html',
-        songs=songs
-    )
+    songs = list(CATALOG_TRACKS)
+    random.shuffle(songs)
+    return render_template('recommendations.html', songs=songs)
 
 
 # ==========================================
