@@ -386,9 +386,22 @@ body:has(.home-page) > .container > .alert {
     border: 1px solid #83e8c77a;
     background:
         repeating-radial-gradient(circle, transparent 0 10px, #83e8c71b 11px 12px),
+        conic-gradient(
+            from 0deg,
+            #ffffff10 0deg,
+            transparent 28deg,
+            #83e8c71c 65deg,
+            transparent 105deg,
+            #ffffff0a 150deg,
+            transparent 205deg,
+            #83e8c71b 250deg,
+            transparent 315deg,
+            #ffffff10 360deg
+        ),
         radial-gradient(circle at 40% 35%, #244e4e, #0b1a22 68%);
     box-shadow: 0 0 55px #83e8c71a, inset 0 0 30px #0008;
-    animation: discFloat 7s ease-in-out infinite;
+    animation: discSpin 10s linear infinite;
+    will-change: transform;
 }
 
 .home-disc::before {
@@ -413,8 +426,9 @@ body:has(.home-page) > .container > .alert {
     z-index: 1;
 }
 
-@keyframes discFloat {
-    50% { transform: translateY(-8px) rotate(8deg); }
+@keyframes discSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .home-sound-bars {
