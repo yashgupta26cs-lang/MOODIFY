@@ -117,6 +117,32 @@ def music():
 
 
 def _render_catalog_track(song):
+    queue_tracks = [
+        {
+            'slug': track['slug'],
+            'url': url_for('main.listen', slug=track['slug']),
+            'title': track.get('title', ''),
+            'artist': track.get('artist', ''),
+            'composer': track.get('composer', ''),
+            'description': track.get('description', ''),
+            'genre': track.get('genre', ''),
+            'mood': track.get('mood', ''),
+            'language': track.get('language', ''),
+            'duration': track.get('duration', ''),
+            'audio_url': track.get('audio_url', ''),
+            'fallback_audio_url': track.get('fallback_audio_url', ''),
+            'source_url': track.get('source_url', ''),
+            'license_label': track.get('license_label', ''),
+            'license_url': track.get('license_url', ''),
+            'credit': track.get('credit', ''),
+            'art_class': track.get('art_class', ''),
+        }
+        for track in CATALOG_TRACKS
+    ]
+    current_track_index = next(
+        (index for index, track in enumerate(CATALOG_TRACKS) if track['slug'] == song['slug']),
+        0,
+    )
     return render_template(
         'play.html',
         song=song,
@@ -126,6 +152,8 @@ def _render_catalog_track(song):
         license_label=song.get('license_label'),
         license_url=song.get('license_url'),
         credit=song.get('credit'),
+        queue_tracks=queue_tracks,
+        current_track_index=current_track_index,
     )
 
 
@@ -158,6 +186,8 @@ def play(music_id):
         license_label=None,
         license_url=None,
         credit=None,
+        queue_tracks=[],
+        current_track_index=0,
     )
 
 
