@@ -27,7 +27,7 @@ def create_app():
     # Create only the additive catalogue-playlist table when it is first needed.
     # Existing tables are left untouched; this keeps current user data safe.
     with app.app_context():
-        db.create_all(tables=[models.PlaylistCatalogTrack.__table__])
+        db.create_all()
 
     # register blueprints
     from .auth import auth_bp
