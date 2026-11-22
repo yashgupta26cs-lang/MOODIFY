@@ -49,6 +49,19 @@ body:has(.player-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;
 .player-volume{width:82px;accent-color:var(--player-mint);cursor:pointer}
 .player-status{min-height:15px;margin:8px 0 0;color:#a8c8bd;font-size:10px}
 .player-queue{margin-top:18px;padding:15px 16px;border:1px solid #ffffff18;border-radius:13px;background:#07182055}
+.player-mode-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:18px 0 10px}
+.player-mode-tab{min-height:35px;padding:0 12px;border:1px solid #ffffff24;border-radius:9px;color:#aec2bd;background:#ffffff08;font-size:9px;font-weight:900;cursor:pointer}
+.player-mode-tab:hover,.player-mode-tab[aria-selected="true"]{border-color:#83e8c7;color:#0b2428;background:var(--player-mint)}
+.player-mode-panel{padding:14px 15px;border:1px solid #ffffff18;border-radius:12px;background:#07182055;color:#adc3be;font-size:11px;line-height:1.7}
+.player-mode-panel[hidden]{display:none!important}
+.player-mode-panel p{margin:0}
+.player-mode-note{padding:10px 12px;border:1px solid #83e8c733;border-radius:9px;color:#b9d8ce;background:#83e8c70a}
+.player-mode-video{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:10px;background:#030b10}
+.player-mode-video iframe{width:100%;height:100%;border:0}
+.player-mode-lyrics{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:#e4f0e9;font:12px/1.9 Georgia,serif}
+.player-mode-credit{margin-top:10px!important;color:#87a39d;font-size:9px}
+.player-mode-credit a{color:var(--player-mint);text-decoration:none}
+
 .player-queue h2{margin:0 0 10px;color:#cde5dc;font-size:10px;font-weight:900;letter-spacing:1.5px}
 .player-queue-list{display:grid;gap:6px}
 .player-queue-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:1px solid transparent;border-radius:8px;color:#b5c8c3;background:transparent;text-align:left;font-size:10px;cursor:pointer}
@@ -104,10 +117,22 @@ Your browser does not support audio playback.
 <span class="player-queue-count" id="queuePosition">Track 1</span>
 </div>
 <div class="player-controls">
-<div class="player-control-group"><label for="playbackSpeed">SPEED</label><select id="playbackSpeed"><option value="1" selected>1×</option><option value="0.85">0.85×</option><option value="0.75">0.75×</option><option value="1.25">1.25×</option></select></div>
+<div class="player-control-group"><label for="playbackSpeed">SPEED</label><select id="playbackSpeed"><option value="1" selected>1×</option><option value="0.85">0.85×</option><option value="0.75">0.75×</option><option value="0.65">0.65×</option><option value="1.25">1.25×</option></select></div>
 <div class="player-control-group"><label for="volumeControl">VOLUME</label><input class="player-volume" id="volumeControl" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume"></div>
 </div>
 <p class="player-status" id="playerStatus" role="status" aria-live="polite"></p>
+<div class="player-mode-tabs" role="tablist" aria-label="Listening modes">
+<button class="player-mode-tab" type="button" role="tab" data-player-mode="audio" aria-selected="true">♫ Audio</button>
+<button class="player-mode-tab" type="button" role="tab" data-player-mode="video" aria-selected="false">▣ Video</button>
+<button class="player-mode-tab" type="button" role="tab" data-player-mode="lyrics" aria-selected="false">Lyrics</button>
+<button class="player-mode-tab" type="button" role="tab" data-player-mode="karaoke" aria-selected="false">Karaoke</button>
+<button class="player-mode-tab" type="button" role="tab" data-player-mode="slowed" aria-selected="false">Slowed</button>
+</div>
+<section class="player-mode-panel" role="tabpanel" data-player-panel="audio"><p>Audio-only listening is active. Use the player controls above to play, pause and seek.</p></section>
+<section class="player-mode-panel" role="tabpanel" data-player-panel="video" hidden><div id="videoModeContent"></div></section>
+<section class="player-mode-panel" role="tabpanel" data-player-panel="lyrics" hidden><div id="lyricsModeContent"></div></section>
+<section class="player-mode-panel" role="tabpanel" data-player-panel="karaoke" hidden><div id="karaokeModeContent"></div></section>
+<section class="player-mode-panel" role="tabpanel" data-player-panel="slowed" hidden><p>Slowed listening is set to 0.75×. You can choose another speed using the Speed control above.</p></section>
 {% if queue_tracks and queue_tracks|length > 1 %}
 <section class="player-queue" aria-label="Listening queue"><h2>YOUR QUEUE</h2><div class="player-queue-list" id="queueList"></div></section>
 {% endif %}
@@ -147,6 +172,12 @@ Your browser does not support audio playback.
  const queuePosition=document.getElementById('queuePosition');
  const status=document.getElementById('playerStatus');
  const queueList=document.getElementById('queueList');
+ const modeButtons=Array.from(document.querySelectorAll('[data-player-mode]'));
+ const modePanels=Array.from(document.querySelectorAll('[data-player-panel]'));
+ const videoModeContent=document.getElementById('videoModeContent');
+ const lyricsModeContent=document.getElementById('lyricsModeContent');
+ const karaokeModeContent=document.getElementById('karaokeModeContent');
+ let currentMode='audio';
  const primarySource=document.getElementById('audioSourcePrimary');
  const fallbackSource=document.getElementById('audioSourceFallback');
  const queue={{ queue_tracks|tojson }};
@@ -203,6 +234,151 @@ Your browser does not support audio playback.
      queueList.appendChild(button);
    });
  }
+ function addModeNote(container,message){
+   if(!container)return;
+   const note=document.createElement('p');
+   note.className='player-mode-note';
+   note.textContent=message;
+   container.appendChild(note);
+ }
+ function safeVideoEmbed(rawUrl){
+   if(!rawUrl)return '';
+   try{
+     const parsed=new URL(rawUrl);
+     const allowedHosts=['www.youtube-nocookie.com','www.youtube.com'];
+     if(!allowedHosts.includes(parsed.hostname))return '';
+     if(!/^\/embed\/[A-Za-z0-9_-]+\/?$/.test(parsed.pathname))return '';
+     return parsed.href;
+   }catch(error){return '';}
+ }
+ function getTrackAudioUrl(track){
+   if(currentMode==='karaoke'&&track.karaoke_authorized&&track.karaoke_audio_url){
+     return track.karaoke_audio_url;
+   }
+   return track.audio_url||'';
+ }
+ function changeModeAudio(track,shouldResume){
+   if(!track||!primarySource)return;
+   const desiredUrl=getTrackAudioUrl(track);
+   const currentUrl=primarySource.getAttribute('src')||'';
+   if(!desiredUrl||currentUrl===desiredUrl)return;
+   const resume=Boolean(shouldResume);
+   const savedTime=audio.currentTime||0;
+   audio.pause();
+   primarySource.setAttribute('src',desiredUrl);
+   if(fallbackSource){
+     if(currentMode==='karaoke')fallbackSource.removeAttribute('src');
+     else if(track.fallback_audio_url)fallbackSource.setAttribute('src',track.fallback_audio_url);
+     else fallbackSource.removeAttribute('src');
+   }
+   audio.load();
+   audio.addEventListener('loadedmetadata',function restorePlayback(){
+     if(savedTime&&Number.isFinite(audio.duration)&&audio.duration>0){
+       audio.currentTime=Math.min(savedTime,audio.duration);
+     }
+     if(resume)audio.play().catch(()=>showMessage('Press Play to continue in this mode.'));
+   },{once:true});
+ }
+ function renderListeningModes(track){
+   if(!track)return;
+   if(videoModeContent){
+     videoModeContent.replaceChildren();
+     const embedUrl=safeVideoEmbed(track.video_embed_url);
+     if(currentMode==='video'&&embedUrl){
+       const frameWrap=document.createElement('div');
+       frameWrap.className='player-mode-video';
+       const frame=document.createElement('iframe');
+       frame.src=embedUrl;
+       frame.title='Official video for '+(track.title||'this track');
+       frame.loading='lazy';
+       frame.referrerPolicy='strict-origin-when-cross-origin';
+       frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+       frame.allowFullscreen=true;
+       frameWrap.appendChild(frame);
+       videoModeContent.appendChild(frameWrap);
+     }else{
+       addModeNote(videoModeContent,embedUrl?'Open Video mode to load the linked official video.':'No official video has been linked to this track yet.');
+     }
+   }
+   const hasLyrics=Boolean(track.lyrics_authorized&&track.lyrics);
+   if(lyricsModeContent){
+     lyricsModeContent.replaceChildren();
+     if(hasLyrics){
+       const lines=document.createElement('pre');
+       lines.className='player-mode-lyrics';
+       lines.textContent=track.lyrics;
+       lyricsModeContent.appendChild(lines);
+       if(track.lyrics_credit||track.lyrics_source_url){
+         const credit=document.createElement('p');
+         credit.className='player-mode-credit';
+         credit.textContent=track.lyrics_credit||'Authorised lyrics source';
+         if(track.lyrics_source_url){
+           const link=document.createElement('a');
+           link.href=track.lyrics_source_url;
+           link.target='_blank';
+           link.rel='noopener noreferrer';
+           link.textContent='  ·  View source';
+           credit.appendChild(link);
+         }
+         lyricsModeContent.appendChild(credit);
+       }
+     }else if(track.is_instrumental){
+       addModeNote(lyricsModeContent,'This is an instrumental recording, so it does not have lyrics.');
+     }else{
+       addModeNote(lyricsModeContent,'Lyrics will appear here when an authorised lyrics source is added.');
+     }
+   }
+   if(karaokeModeContent){
+     karaokeModeContent.replaceChildren();
+     if(track.is_instrumental){
+       addModeNote(karaokeModeContent,'This recording is already instrumental, so it can be used as backing music in Karaoke mode.');
+       if(!hasLyrics){
+         const extra=document.createElement('p');
+         extra.className='player-mode-credit';
+         extra.textContent='No authorised lyric text is attached to this track yet.';
+         karaokeModeContent.appendChild(extra);
+       }
+     }else if(track.karaoke_authorized&&track.karaoke_audio_url){
+       addModeNote(karaokeModeContent,'An authorised karaoke backing track is loaded. Use the player controls above to sing along.');
+     }else{
+       addModeNote(karaokeModeContent,'A karaoke backing track has not been added for this song yet.');
+     }
+     if(hasLyrics){
+       const lines=document.createElement('pre');
+       lines.className='player-mode-lyrics';
+       lines.style.marginTop='12px';
+       lines.textContent=track.lyrics;
+       karaokeModeContent.appendChild(lines);
+     }
+   }
+ }
+ function selectPlayerMode(mode){
+   const allowed=['audio','video','lyrics','karaoke','slowed'];
+   if(!allowed.includes(mode))return;
+   const wasPlaying=!audio.paused;
+   currentMode=mode;
+   modeButtons.forEach(button=>{
+     const active=button.dataset.playerMode===mode;
+     button.setAttribute('aria-selected',active?'true':'false');
+   });
+   modePanels.forEach(panel=>{panel.hidden=panel.dataset.playerPanel!==mode;});
+   if(currentTrack&&mode==='video'&&safeVideoEmbed(currentTrack.video_embed_url))audio.pause();
+   if(currentTrack&&(mode==='karaoke'||mode==='audio')){
+     changeModeAudio(currentTrack,wasPlaying);
+   }
+   if(mode==='slowed'&&speed){
+     speed.value='0.75';
+     audio.playbackRate=0.75;
+   }
+   renderListeningModes(currentTrack);
+   if(mode==='slowed')showMessage('Slowed mode · 0.75× playback');
+   else if(mode==='karaoke'&&currentTrack&&currentTrack.is_instrumental)showMessage('Instrumental backing mode selected');
+   else showMessage('');
+ }
+ modeButtons.forEach(button=>{
+   button.addEventListener('click',()=>selectPlayerMode(button.dataset.playerMode));
+ });
+
  function updateTrackDetails(track){
    document.getElementById('trackTitle').textContent=track.title||'MOODIFY track';
    document.getElementById('trackArtist').textContent=track.artist||'';
@@ -229,6 +405,7 @@ Your browser does not support audio playback.
    license.textContent=track.license_label?'Rights: '+track.license_label+' · ':'';
    license.append(licenseLink,document.createTextNode(' · '),sourceLink);
    rights.hidden=!(track.credit||track.license_label||track.license_url||track.source_url);
+   renderListeningModes(track);
    renderQueue();
  }
  function playQueueIndex(index,shouldPlay){
@@ -237,10 +414,12 @@ Your browser does not support audio playback.
    currentTrack=queue[currentIndex];
    audio.pause();
    updateTrackDetails(currentTrack);
-   if(primarySource)primarySource.src=currentTrack.audio_url;
-   else audio.src=currentTrack.audio_url;
+   const selectedAudioUrl=getTrackAudioUrl(currentTrack);
+   if(primarySource)primarySource.src=selectedAudioUrl;
+   else audio.src=selectedAudioUrl;
    if(fallbackSource){
-     if(currentTrack.fallback_audio_url)fallbackSource.src=currentTrack.fallback_audio_url;
+     if(currentMode==='karaoke'&&selectedAudioUrl!==currentTrack.audio_url)fallbackSource.removeAttribute('src');
+     else if(currentTrack.fallback_audio_url)fallbackSource.src=currentTrack.fallback_audio_url;
      else fallbackSource.removeAttribute('src');
    }
    audio.load();
@@ -255,6 +434,7 @@ Your browser does not support audio playback.
  }
  if(queue.length>0){
    updateTrackDetails(currentTrack);
+   selectPlayerMode('audio');
    if(previousButton)previousButton.disabled=queue.length<2;
    if(nextButton)nextButton.disabled=queue.length<2;
  }
