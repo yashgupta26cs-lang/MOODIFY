@@ -474,28 +474,3 @@ def setup():
 
     return render_template('setup.html')
 
-
-# ==========================================
-# MOODOMETER
-# ==========================================
-
-@main_bp.route('/moodometer')
-@login_required
-def moodometer():
-
-    entries = MoodHistory.query.filter_by(
-        user_id=current_user.id
-    ).order_by(MoodHistory.timestamp).all()
-
-    dates = [
-        entry.timestamp.strftime('%Y-%m-%d %H:%M')
-        for entry in entries
-    ]
-
-    moods = [entry.mood for entry in entries]
-
-    return render_template(
-        'mood_history.html',
-        dates=dates,
-        moods=moods
-    )
