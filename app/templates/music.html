@@ -90,22 +90,11 @@ body:has(.library-page)>.container>.alert{width:min(1180px,92%);margin:18px auto
 <h2>{{ song.title }}</h2><p class="library-artist">{{ song.artist }}</p><p class="library-composer">Composer: {{ song.composer }}</p><p class="library-description">{{ song.description }}</p>
 <div class="library-card-bottom"><a class="library-listen" href="{{ url_for('main.listen', slug=song.slug) }}">LISTEN TO FULL TRACK →</a><span class="library-license">{{ song.license_label }}</span></div>
 {% if playlists %}
-<form class="library-add-form" method="POST" action="" data-add-base="{{ url_for('main.add_to_playlist', playlist_id=0) }}">
-<select aria-label="Choose a playlist" required><option value="">Add to playlist…</option>{% for pl in playlists %}<option value="{{ pl.id }}">{{ pl.name }}</option>{% endfor %}</select>
+<form class="library-add-form" method="POST" action="{{ url_for('main.add_to_playlist', playlist_id=0) }}" data-add-base="{{ url_for('main.add_to_playlist', playlist_id=0) }}">
+<select name="playlist_choice" aria-label="Choose a playlist" required><option value="">Add to playlist…</option>{% for pl in playlists %}<option value="{{ pl.id }}">{{ pl.name }}</option>{% endfor %}</select>
+<input type="hidden" name="slug" value="{{ song.slug }}">
 <button type="submit">＋ SAVE</button>
 </form>
-<script>
-document.querySelectorAll('.library-add-form').forEach(function(form){
-  form.addEventListener('submit',function(event){
-    event.preventDefault();
-    var chosen=form.querySelector('select').value;
-    if(!chosen)return;
-    form.action=form.dataset.addBase.replace('/0/','/'+chosen+'/');
-    var hidden=document.createElement('input');hidden.type='hidden';hidden.name='slug';hidden.value={{ song.slug|tojson }};
-    form.appendChild(hidden);form.submit();
-  });
-});
-</script>
 {% else %}
 <a class="library-create-playlist" href="{{ url_for('main.playlist') }}">＋ CREATE A PLAYLIST TO SAVE THIS TRACK</a>
 {% endif %}
@@ -115,6 +104,15 @@ document.querySelectorAll('.library-add-form').forEach(function(form){
 <div class="library-empty"><strong>No tracks match those filters.</strong>Try clearing one of the filters or searching for “Bach” or “Beethoven”.<br><a class="library-listen" style="margin-top:14px" href="{{ url_for('main.music') }}">CLEAR FILTERS</a></div>
 {% endfor %}
 </section>
+<script>
+document.querySelectorAll('.library-add-form').forEach(function(form){
+  form.addEventListener('submit',function(event){
+    const chosen=form.querySelector('select[name="playlist_choice"]').value;
+    if(!chosen){event.preventDefault();return;}
+    form.action=form.dataset.addBase.replace('/0/','/'+chosen+'/');
+  });
+});
+</script>
 <div class="library-credit"><strong>About this starter collection:</strong> These first tracks are public-domain recordings sourced from Wikimedia Commons. MOODIFY shows the source and rights information on each player page. More licensed tracks and languages can be added as the catalogue grows.</div>
 <footer class="library-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
 </main></div>
