@@ -320,22 +320,35 @@ def play_playlist(playlist_id):
 @main_bp.route('/mood_history')
 @login_required
 def mood_history():
+    return redirect(url_for('main.moodometer'))
 
+
+@main_bp.route('/moodometer')
+@login_required
+def moodometer():
     entries = MoodHistory.query.filter_by(
         user_id=current_user.id
-    ).order_by(MoodHistory.timestamp).all()
+    ).order_by(MoodHistory.timestamp.asc()).all()
 
-    dates = [
-        entry.timestamp.strftime('%Y-%m-%d %H:%M')
+    mood_entries = [
+        {
+            'mood': entry.mood,
+            'timestamp': entry.timestamp.isoformat(),
+        }
         for entry in entries
     ]
 
-    moods = [entry.mood for entry in entries]
+    from collections import Counter
+    mood_counts = Counter(entry.mood for entry in entries)
+    latest_mood = entries[-1].mood if entries else None
+    top_mood = mood_counts.most_common(1)[0][0] if mood_counts else None
 
     return render_template(
         'mood_history.html',
-        dates=dates,
-        moods=moods
+        mood_entries=mood_entries,
+        total_checkins=len(entries),
+        latest_mood=latest_mood,
+        top_mood=top_mood,
     )
 
 
@@ -348,9 +361,73 @@ def profile():
 @main_bp.route('/recommendations')
 @login_required
 def recommendations():
-    songs = list(CATALOG_TRACKS)
-    random.shuffle(songs)
-    return render_template('recommendations.html', songs=songs)
+    from collections import Counter
+
+    recent_entries = MoodHistory.query.filter_by(
+        user_id=current_user.id
+    ).order_by(MoodHistory.timestamp.desc()).limit(8).all()
+    recent_moods = Counter(entry.mood for entry in recent_entries)
+
+    selected_mood = request.args.get('mood', '').strip()
+    target_mood = selected_mood or (
+        recent_entries[0].mood if recent_entries else current_user.preferred_mood
+    )
+
+    favourite_singers = [
+        name.strip().casefold()
+        for name in (current_user.favorite_singer or '').split(',')
+        if name.strip()
+    ]
+    preferred_language = (current_user.preferred_language or '').casefold()
+
+    recommendations_list = []
+    for song in CATALOG_TRACKS:
+        score = 0
+        reasons = []
+        song_mood = (song.get('mood') or '').casefold()
+        song_language = (song.get('language') or '').casefold()
+        artist_text = f"{song.get('artist', '')} {song.get('composer', '')}".casefold()
+
+        if target_mood and song_mood == target_mood.casefold():
+            score += 5
+            reasons.append(f"Matches your {target_mood} mood")
+        elif song.get('mood') in recent_moods:
+            score += min(recent_moods[song.get('mood')], 3)
+            reasons.append(f"You checked in as {song.get('mood').lower()} recently")
+
+        if preferred_language and preferred_language in song_language:
+            score += 3
+            reasons.append(f"Matches your {current_user.preferred_language} language preference")
+
+        matched_singer = next((name for name in favourite_singers if name in artist_text), None)
+        if matched_singer:
+            score += 5
+            reasons.append(f"Features your favourite artist: {matched_singer.title()}")
+
+        if song_language == 'instrumental':
+            reasons.append("Instrumental listening")
+
+        if not reasons:
+            reasons.append("A curated track to explore something new")
+
+        recommendations_list.append({
+            **song,
+            'score': score,
+            'reasons': reasons,
+            'has_personal_match': score > 0,
+        })
+
+    recommendations_list.sort(
+        key=lambda song: (-song['score'], song['title'].casefold())
+    )
+    available_moods = sorted({song.get('mood') for song in CATALOG_TRACKS if song.get('mood')})
+
+    return render_template(
+        'recommendations.html',
+        songs=recommendations_list,
+        selected_mood=target_mood or '',
+        available_moods=available_moods,
+    )
 
 
 # ==========================================
