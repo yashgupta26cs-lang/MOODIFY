@@ -43,6 +43,13 @@ class Playlist(db.Model):
     name = db.Column(db.String(150), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
+    catalog_tracks = db.relationship(
+        'PlaylistCatalogTrack',
+        backref='playlist',
+        cascade='all, delete-orphan',
+        lazy=True,
+    )
+
     songs = db.relationship(
         'Music',
         secondary='playlist_songs',
