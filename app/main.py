@@ -8,7 +8,7 @@ from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from . import db
-from .models import Music, Playlist, MoodHistory
+from .models import Music, Playlist, PlaylistCatalogTrack, MoodHistory
 from .music_catalog import CATALOG_TRACKS
 
 import random
@@ -113,10 +113,12 @@ def music():
 
         songs.append(song)
 
-    return render_template('music.html', songs=songs)
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
+    return render_template('music.html', songs=songs, playlists=playlists)
 
 
-def _render_catalog_track(song):
+def _render_catalog_track(song, queue_catalog_tracks=None):
+    queue_source = queue_catalog_tracks if queue_catalog_tracks is not None else CATALOG_TRACKS
     queue_tracks = [
         {
             'slug': track['slug'],
@@ -145,10 +147,10 @@ def _render_catalog_track(song):
             'karaoke_audio_url': track.get('karaoke_audio_url', '') if track.get('karaoke_authorized') else '',
             'karaoke_authorized': bool(track.get('karaoke_authorized')),
         }
-        for track in CATALOG_TRACKS
+        for track in queue_source
     ]
     current_track_index = next(
-        (index for index, track in enumerate(CATALOG_TRACKS) if track['slug'] == song['slug']),
+        (index for index, track in enumerate(queue_source) if track['slug'] == song['slug']),
         0,
     )
     return render_template(
@@ -202,38 +204,117 @@ def play(music_id):
 @main_bp.route('/playlist')
 @login_required
 def playlist():
-
-    playlists = Playlist.query.filter_by(
-        user_id=current_user.id
-    ).all()
-
-    return render_template(
-        'playlist.html',
-        playlists=playlists
-    )
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.id.desc()).all()
+    return render_template('playlist.html', playlists=playlists, catalog_tracks=CATALOG_TRACKS)
 
 
 @main_bp.route('/playlist/create', methods=['POST'])
 @login_required
 def create_playlist():
-
     name = request.form.get('name', '').strip()
-
     if not name:
-        flash('Playlist name required')
+        flash('Give your playlist a name first.')
+        return redirect(url_for('main.playlist'))
+    if len(name) > 150:
+        flash('Playlist names must be 150 characters or fewer.')
         return redirect(url_for('main.playlist'))
 
-    new_pl = Playlist(
-        name=name,
-        user_id=current_user.id
+    new_playlist = Playlist(name=name, user_id=current_user.id)
+    db.session.add(new_playlist)
+    db.session.commit()
+    flash('Your playlist is ready. Add some tracks!')
+    return redirect(url_for('main.playlist_detail', playlist_id=new_playlist.id))
+
+
+@main_bp.route('/playlist/<int:playlist_id>')
+@login_required
+def playlist_detail(playlist_id):
+    selected_playlist = Playlist.query.filter_by(
+        id=playlist_id, user_id=current_user.id
+    ).first_or_404()
+    saved_items = PlaylistCatalogTrack.query.filter_by(
+        playlist_id=selected_playlist.id
+    ).order_by(PlaylistCatalogTrack.id.asc()).all()
+    track_lookup = {track['slug']: track for track in CATALOG_TRACKS}
+    playlist_tracks = [
+        {'item': item, 'song': track_lookup[item.catalog_slug]}
+        for item in saved_items if item.catalog_slug in track_lookup
+    ]
+    return render_template(
+        'playlist_detail.html',
+        playlist=selected_playlist,
+        playlist_tracks=playlist_tracks,
+        catalog_tracks=CATALOG_TRACKS,
     )
 
-    db.session.add(new_pl)
+
+@main_bp.route('/playlist/<int:playlist_id>/add', methods=['POST'])
+@login_required
+def add_to_playlist(playlist_id):
+    selected_playlist = Playlist.query.filter_by(
+        id=playlist_id, user_id=current_user.id
+    ).first_or_404()
+    slug = request.form.get('slug', '').strip()
+    if not any(track['slug'] == slug for track in CATALOG_TRACKS):
+        abort(404)
+    existing = PlaylistCatalogTrack.query.filter_by(
+        playlist_id=selected_playlist.id, catalog_slug=slug
+    ).first()
+    if existing:
+        flash('That track is already in this playlist.')
+    else:
+        db.session.add(PlaylistCatalogTrack(
+            playlist_id=selected_playlist.id,
+            catalog_slug=slug,
+        ))
+        db.session.commit()
+        flash('Track added to your playlist.')
+    return redirect(request.referrer or url_for('main.playlist_detail', playlist_id=selected_playlist.id))
+
+
+@main_bp.route('/playlist/<int:playlist_id>/remove/<slug>', methods=['POST'])
+@login_required
+def remove_from_playlist(playlist_id, slug):
+    selected_playlist = Playlist.query.filter_by(
+        id=playlist_id, user_id=current_user.id
+    ).first_or_404()
+    item = PlaylistCatalogTrack.query.filter_by(
+        playlist_id=selected_playlist.id, catalog_slug=slug
+    ).first_or_404()
+    db.session.delete(item)
     db.session.commit()
+    flash('Track removed from your playlist.')
+    return redirect(url_for('main.playlist_detail', playlist_id=selected_playlist.id))
 
-    flash('Playlist created')
 
+@main_bp.route('/playlist/<int:playlist_id>/delete', methods=['POST'])
+@login_required
+def delete_playlist(playlist_id):
+    selected_playlist = Playlist.query.filter_by(
+        id=playlist_id, user_id=current_user.id
+    ).first_or_404()
+    PlaylistCatalogTrack.query.filter_by(playlist_id=selected_playlist.id).delete()
+    db.session.delete(selected_playlist)
+    db.session.commit()
+    flash('Playlist deleted.')
     return redirect(url_for('main.playlist'))
+
+
+@main_bp.route('/playlist/<int:playlist_id>/play')
+@login_required
+def play_playlist(playlist_id):
+    selected_playlist = Playlist.query.filter_by(
+        id=playlist_id, user_id=current_user.id
+    ).first_or_404()
+    saved_items = PlaylistCatalogTrack.query.filter_by(
+        playlist_id=selected_playlist.id
+    ).order_by(PlaylistCatalogTrack.id.asc()).all()
+    track_lookup = {track['slug']: track for track in CATALOG_TRACKS}
+    queue = [track_lookup[item.catalog_slug] for item in saved_items if item.catalog_slug in track_lookup]
+    if not queue:
+        flash('Add at least one track before playing this playlist.')
+        return redirect(url_for('main.playlist_detail', playlist_id=selected_playlist.id))
+    return _render_catalog_track(queue[0], queue_catalog_tracks=queue)
 
 
 @main_bp.route('/mood_history')
