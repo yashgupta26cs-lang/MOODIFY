@@ -269,7 +269,7 @@ def add_to_playlist(playlist_id):
         ))
         db.session.commit()
         flash('Track added to your playlist.')
-    return redirect(request.referrer or url_for('main.playlist_detail', playlist_id=selected_playlist.id))
+    return redirect(url_for('main.playlist_detail', playlist_id=selected_playlist.id))
 
 
 @main_bp.route('/playlist/<int:playlist_id>/remove/<slug>', methods=['POST'])
