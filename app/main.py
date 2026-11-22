@@ -422,11 +422,13 @@ def recommendations():
     )
     available_moods = sorted({song.get('mood') for song in CATALOG_TRACKS if song.get('mood')})
 
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
     return render_template(
         'recommendations.html',
         songs=recommendations_list,
         selected_mood=target_mood or '',
         available_moods=available_moods,
+        playlists=playlists,
     )
 
 
