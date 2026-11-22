@@ -49,6 +49,10 @@ body:has(.library-page)>.container>.alert{width:min(1180px,92%);margin:18px auto
 .library-listen{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 16px;border-radius:9px;color:var(--lib-night);background:var(--lib-mint);text-decoration:none;font-size:9px;font-weight:950;letter-spacing:.7px}
 .library-listen:hover{color:var(--lib-night);background:#a6f2d9}
 .library-license{max-width:145px;color:#8fa6a5;font-size:9px;line-height:1.5;text-align:right}
+.library-add-form{display:flex;gap:7px;margin-top:13px;padding-top:13px;border-top:1px solid #ffffff12}
+.library-add-form select{flex:1;min-width:0;height:36px;padding:0 9px;border:1px solid #ffffff20;border-radius:8px;color:#dcece5;background:#0b1b23;font-size:10px}
+.library-add-form button{padding:0 12px;border:0;border-radius:8px;color:#0a1821;background:#83e8c7;font-size:9px;font-weight:950;cursor:pointer}
+.library-create-playlist{display:inline-block;margin-top:13px;color:#83e8c7;font-size:9px;font-weight:900;text-decoration:none}
 .library-credit{margin-top:25px;padding:16px 18px;border:1px solid #ffffff15;border-radius:13px;color:#91a6a7;background:#ffffff06;font-size:10px;line-height:1.7}
 .library-credit strong{color:#dceae4}.library-credit a{color:var(--lib-mint);text-decoration:none}
 .library-empty{grid-column:1/-1;padding:35px;border:1px dashed #83e8c755;border-radius:16px;color:#a8bbba;text-align:center;font-size:12px;line-height:1.7}
@@ -85,6 +89,26 @@ body:has(.library-page)>.container>.alert{width:min(1180px,92%);margin:18px auto
 <div class="library-meta"><span class="library-chip">{{ song.genre }}</span><span class="library-chip">{{ song.mood }}</span><span class="library-duration">{{ song.duration }}</span></div>
 <h2>{{ song.title }}</h2><p class="library-artist">{{ song.artist }}</p><p class="library-composer">Composer: {{ song.composer }}</p><p class="library-description">{{ song.description }}</p>
 <div class="library-card-bottom"><a class="library-listen" href="{{ url_for('main.listen', slug=song.slug) }}">LISTEN TO FULL TRACK →</a><span class="library-license">{{ song.license_label }}</span></div>
+{% if playlists %}
+<form class="library-add-form" method="POST" action="" data-add-base="{{ url_for('main.add_to_playlist', playlist_id=0) }}">
+<select aria-label="Choose a playlist" required><option value="">Add to playlist…</option>{% for pl in playlists %}<option value="{{ pl.id }}">{{ pl.name }}</option>{% endfor %}</select>
+<button type="submit">＋ SAVE</button>
+</form>
+<script>
+document.querySelectorAll('.library-add-form').forEach(function(form){
+  form.addEventListener('submit',function(event){
+    event.preventDefault();
+    var chosen=form.querySelector('select').value;
+    if(!chosen)return;
+    form.action=form.dataset.addBase.replace('/0/','/'+chosen+'/');
+    var hidden=document.createElement('input');hidden.type='hidden';hidden.name='slug';hidden.value={{ song.slug|tojson }};
+    form.appendChild(hidden);form.submit();
+  });
+});
+</script>
+{% else %}
+<a class="library-create-playlist" href="{{ url_for('main.playlist') }}">＋ CREATE A PLAYLIST TO SAVE THIS TRACK</a>
+{% endif %}
 </div>
 </article>
 {% else %}
