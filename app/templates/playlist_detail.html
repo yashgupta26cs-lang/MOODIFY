@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}{{ playlist.name }} | MOODIFY{% endblock %}
+{% block content %}
+<style>
+:root{--pd-night:#0a1821;--pd-mint:#83e8c7;--pd-muted:#9bb0b1}
+body:has(.playlist-detail-page){margin:0;background:var(--pd-night);color:#f7f7f1;font-family:"Segoe UI",Arial,sans-serif;overflow-x:hidden}
+body:has(.playlist-detail-page)>nav.navbar{display:none!important}
+body:has(.playlist-detail-page)>.container{max-width:none;width:100%;padding:0;margin:0}
+body:has(.playlist-detail-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
+.playlist-detail-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--pd-night)}
+.pd-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
+.pd-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}.pd-brand:hover{color:#fff}.pd-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;border:1px solid #83e8c788;color:var(--pd-mint);background:linear-gradient(145deg,#21483f,#102b30);font-size:23px}
+.pd-nav{display:flex;gap:6px;flex-wrap:wrap}.pd-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}.pd-nav a:hover,.pd-nav a.active{color:var(--pd-mint);background:#83e8c711}
+.pd-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}.pd-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--pd-night);background:var(--pd-mint)}.pd-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
+.pd-main{width:min(1080px,92%);margin:0 auto;padding:34px 0 55px}.pd-back{display:inline-block;margin-bottom:18px;color:var(--pd-mint);font-size:10px;font-weight:900;letter-spacing:1px;text-decoration:none}
+.pd-hero{display:grid;grid-template-columns:220px 1fr;align-items:center;gap:27px;padding:25px;border:1px solid #83e8c733;border-radius:21px;background:radial-gradient(circle at 18% 35%,#83e8c71c,transparent 35%),linear-gradient(120deg,#183a3c,#102630 62%,#142b36)}
+.pd-art{height:205px;position:relative;display:grid;place-items:center;overflow:hidden;border:1px solid #ffffff24;border-radius:14px;background:linear-gradient(145deg,#285d58,#172e39)}
+.pd-art:before,.pd-art:after{content:"";position:absolute;width:240px;height:240px;border:1px solid #ffffff25;border-radius:50%}.pd-art:before{transform:translate(-65px,65px)}.pd-art:after{transform:translate(85px,-85px)}
+.pd-disc{width:145px;height:145px;position:relative;z-index:1;border:1px solid #83e8c788;border-radius:50%;background:repeating-radial-gradient(circle,#07141c 0 8px,#24423e 9px 10px);box-shadow:0 15px 35px #0006}
+.pd-disc:after{content:"♫";position:absolute;inset:39%;display:grid;place-items:center;border-radius:50%;color:#0a1821;background:var(--pd-mint);font-size:18px}
+.pd-kicker{margin-bottom:10px;color:var(--pd-mint);font-size:9px;font-weight:900;letter-spacing:2.4px}.pd-copy h1{margin:0;color:#f7f7f1;font-size:clamp(28px,4vw,40px);font-weight:850;letter-spacing:-1.3px;overflow-wrap:anywhere}.pd-copy p{margin:9px 0 16px;color:#9bb0b1;font-size:11px}
+.pd-actions{display:flex;flex-wrap:wrap;gap:9px}.pd-primary,.pd-secondary{min-height:41px;padding:0 15px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none;font-size:9px;font-weight:950;letter-spacing:.6px}
+.pd-primary{border:0;color:#0a1821;background:var(--pd-mint)}.pd-primary:hover{color:#0a1821;background:#a6f2d9}
+.pd-secondary{border:1px solid #ffffff30;color:#e1efea;background:#ffffff08}.pd-secondary:hover{border-color:var(--pd-mint);color:var(--pd-mint)}
+.pd-section{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:29px 0 13px}.pd-section h2{margin:0;color:#f2f6f0;font-size:17px;font-weight:850}.pd-section span{color:#8fa6a5;font-size:10px}
+.pd-track-list{display:grid;gap:9px}
+.pd-track{display:grid;grid-template-columns:45px minmax(0,1fr) auto;align-items:center;gap:13px;padding:12px 14px;border:1px solid #ffffff16;border-radius:13px;background:#ffffff08}
+.pd-track-art{width:45px;height:45px;display:grid;place-items:center;border-radius:10px;color:#0a1821;background:linear-gradient(145deg,#83e8c7,#3e8d7a);font-size:18px;font-weight:900}
+.pd-track-copy{min-width:0}.pd-track-copy strong{display:block;overflow:hidden;color:#f3f6ef;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.pd-track-copy small{display:block;margin-top:4px;color:#91a8a7;font-size:10px}
+.pd-track-actions{display:flex;align-items:center;gap:8px}.pd-track-actions a{color:var(--pd-mint);font-size:9px;font-weight:900;text-decoration:none}.pd-remove{padding:7px 9px;border:1px solid #ffffff20;border-radius:8px;color:#a9b9bb;background:transparent;font-size:9px;cursor:pointer}.pd-remove:hover{border-color:#e88e8e;color:#ffb2b2}
+.pd-empty{padding:25px;border:1px dashed #83e8c755;border-radius:14px;color:#a8bbba;text-align:center;font-size:11px;line-height:1.7}.pd-empty strong{display:block;margin-bottom:5px;color:#f3f6ef;font-size:15px}
+.pd-add-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.pd-add-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;border:1px solid #ffffff16;border-radius:12px;background:#ffffff07}
+.pd-add-copy{min-width:0}.pd-add-copy strong{display:block;overflow:hidden;color:#eef4ee;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.pd-add-copy small{display:block;margin-top:4px;color:#8fa6a5;font-size:9px}
+.pd-add-card button{flex:0 0 auto;min-height:34px;padding:0 11px;border:1px solid #83e8c766;border-radius:8px;color:var(--pd-mint);background:#83e8c711;font-size:9px;font-weight:900;cursor:pointer}.pd-add-card button:hover{color:#0a1821;background:var(--pd-mint)}
+.pd-footer{padding:27px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
+@media(max-width:700px){.pd-topbar{flex-wrap:wrap}.pd-nav{order:3;width:100%}.pd-hero{grid-template-columns:1fr}.pd-art{height:170px}.pd-add-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.pd-topbar{padding:11px 4%}.pd-brand{font-size:17px}.pd-account span:not(.pd-avatar),.pd-logout{display:none}.pd-main{padding-top:25px}.pd-hero{padding:17px}.pd-track{grid-template-columns:40px minmax(0,1fr)}.pd-track-art{width:40px;height:40px}.pd-track-actions{grid-column:2;justify-content:flex-start}}
+</style>
+<div class="playlist-detail-page">
+<header class="pd-topbar">
+<a class="pd-brand" href="{{ url_for('main.home') }}"><span class="pd-logo">♫</span> MOODIFY</a>
+<nav class="pd-nav" aria-label="Main navigation"><a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}">Music</a><a class="active" href="{{ url_for('main.playlist') }}">Playlists</a><a href="{{ url_for('main.moodometer') }}">Moodometer</a><a href="{{ url_for('main.recommendations') }}">For you</a></nav>
+<div class="pd-account"><span class="pd-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="pd-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
+</header>
+<main class="pd-main">
+<a class="pd-back" href="{{ url_for('main.playlist') }}">← ALL PLAYLISTS</a>
+<section class="pd-hero"><div class="pd-art"><div class="pd-disc"></div></div><div class="pd-copy"><div class="pd-kicker">YOUR MOODIFY COLLECTION</div><h1>{{ playlist.name }}</h1><p>{{ playlist_tracks|length }} saved track{{ '' if playlist_tracks|length == 1 else 's' }} · Curated by you</p>
+<div class="pd-actions"><a class="pd-primary" href="{{ url_for('main.play_playlist', playlist_id=playlist.id) }}">▶ PLAY PLAYLIST</a><a class="pd-secondary" href="{{ url_for('main.music') }}">BROWSE MUSIC</a></div></div></section>
+<div class="pd-section"><h2>In this playlist</h2><span>{{ playlist_tracks|length }} tracks</span></div>
+<section class="pd-track-list">
+{% for row in playlist_tracks %}
+<article class="pd-track"><div class="pd-track-art">{{ loop.index }}</div><div class="pd-track-copy"><strong>{{ row.song.title }}</strong><small>{{ row.song.artist }} · {{ row.song.duration }}</small></div>
+<div class="pd-track-actions"><a href="{{ url_for('main.listen', slug=row.song.slug) }}">OPEN ↗</a><form method="POST" action="{{ url_for('main.remove_from_playlist', playlist_id=playlist.id, slug=row.song.slug) }}"><button class="pd-remove" type="submit">REMOVE</button></form></div></article>
+{% else %}
+<div class="pd-empty"><strong>This playlist is waiting for its first track.</strong>Choose something from the catalogue below and save it here.</div>
+{% endfor %}
+</section>
+<div class="pd-section"><h2>Add music</h2><span>MOODIFY catalogue</span></div>
+<section class="pd-add-grid">
+{% for song in catalog_tracks %}
+{% set already_saved = song.slug in playlist_tracks|map(attribute='song.slug')|list %}
+<div class="pd-add-card"><div class="pd-add-copy"><strong>{{ song.title }}</strong><small>{{ song.artist }} · {{ song.duration }}</small></div>
+{% if already_saved %}<button type="button" disabled style="opacity:.55;cursor:default">✓ ADDED</button>
+{% else %}<form method="POST" action="{{ url_for('main.add_to_playlist', playlist_id=playlist.id) }}"><input type="hidden" name="slug" value="{{ song.slug }}"><button type="submit">＋ ADD</button></form>{% endif %}</div>
+{% endfor %}
+</section>
+<footer class="pd-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
+</main></div>
+{% endblock %}
