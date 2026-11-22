@@ -24,6 +24,11 @@ def create_app():
     # make sure the models are registered (needed by Flask-Migrate)
     from . import models  # noqa: F401
 
+    # Create only the additive catalogue-playlist table when it is first needed.
+    # Existing tables are left untouched; this keeps current user data safe.
+    with app.app_context():
+        db.create_all(tables=[models.PlaylistCatalogTrack.__table__])
+
     # register blueprints
     from .auth import auth_bp
     from .main import main_bp
