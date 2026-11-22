@@ -67,6 +67,16 @@ playlist_songs = db.Table(
 )
 
 
+class PlaylistCatalogTrack(db.Model):
+    """A curated catalogue track saved inside a user's playlist."""
+    id = db.Column(db.Integer, primary_key=True)
+    playlist_id = db.Column(db.Integer, db.ForeignKey('playlist.id', ondelete='CASCADE'), nullable=False, index=True)
+    catalog_slug = db.Column(db.String(120), nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('playlist_id', 'catalog_slug', name='uq_playlist_catalog_track'),
+    )
+
+
 class MoodHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     mood = db.Column(db.String(50), nullable=False)
