@@ -136,6 +136,14 @@ def _render_catalog_track(song):
             'license_url': track.get('license_url', ''),
             'credit': track.get('credit', ''),
             'art_class': track.get('art_class', ''),
+            'is_instrumental': track.get('is_instrumental', track.get('language', '').casefold() == 'instrumental'),
+            'video_embed_url': track.get('video_embed_url', ''),
+            'lyrics': track.get('lyrics', '') if track.get('lyrics_authorized') else '',
+            'lyrics_authorized': bool(track.get('lyrics_authorized')),
+            'lyrics_credit': track.get('lyrics_credit', ''),
+            'lyrics_source_url': track.get('lyrics_source_url', ''),
+            'karaoke_audio_url': track.get('karaoke_audio_url', '') if track.get('karaoke_authorized') else '',
+            'karaoke_authorized': bool(track.get('karaoke_authorized')),
         }
         for track in CATALOG_TRACKS
     ]
