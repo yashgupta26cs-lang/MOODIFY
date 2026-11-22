@@ -1,28 +1,87 @@
-
 {% extends 'base.html' %}
-{% block title %}Recommendations - MOODIFY{% endblock %}
-
+{% block title %}For You | MOODIFY{% endblock %}
 {% block content %}
-<h2 class="mb-4">Recommended for You</h2>
-
-<div class="row">
-    {% for song in songs %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body d-flex flex-column">
-                <h5 class="card-title">{{ song.title }}</h5>
-                <p class="card-text">{{ song.artist }}</p>
-                <p class="card-text">
-                    <small class="text-muted">{{ song.language }} - {{ song.mood }}</small>
-                </p>
-                <a href="{{ url_for('main.play', music_id=song.id) }}"
-                   class="mt-auto btn btn-outline-primary">Play</a>
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <p>No recommendations available yet.</p>
-    {% endfor %}
-</div>
+<style>
+:root{--rf-night:#0a1821;--rf-mint:#83e8c7;--rf-muted:#9bb0b1}
+body:has(.recommend-page){margin:0;background:var(--rf-night);color:#f7f7f1;font-family:"Segoe UI",Arial,sans-serif;overflow-x:hidden}
+body:has(.recommend-page)>nav.navbar{display:none!important}
+body:has(.recommend-page)>.container{max-width:none;width:100%;padding:0;margin:0}
+body:has(.recommend-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
+.recommend-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--rf-night)}
+.rf-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
+.rf-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}.rf-brand:hover{color:#fff}
+.rf-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;border:1px solid #83e8c788;color:var(--rf-mint);background:linear-gradient(145deg,#21483f,#102b30);font-size:23px}
+.rf-nav{display:flex;gap:6px;flex-wrap:wrap}.rf-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}.rf-nav a:hover,.rf-nav a.active{color:var(--rf-mint);background:#83e8c711}
+.rf-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}.rf-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--rf-night);background:var(--rf-mint)}.rf-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
+.rf-main{width:min(1180px,92%);margin:0 auto;padding:42px 0 55px}
+.rf-hero{display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:25px}
+.rf-kicker{margin-bottom:12px;color:var(--rf-mint);font-size:9px;font-weight:900;letter-spacing:2.5px}
+.rf-hero h1{margin:0;color:#f7f7f1;font-size:clamp(31px,4vw,44px);line-height:1.08;letter-spacing:-1.5px;font-weight:850}.rf-hero h1 span{color:var(--rf-mint)}
+.rf-hero p{max-width:620px;margin:12px 0 0;color:var(--rf-muted);font-size:13px;line-height:1.7}
+.rf-filter{display:flex;align-items:center;gap:9px;padding:8px;border:1px solid #83e8c733;border-radius:12px;background:#ffffff08}
+.rf-filter label{padding-left:7px;color:#9bb0b1;font-size:9px;font-weight:900;letter-spacing:1px}
+.rf-filter select{height:37px;padding:0 10px;border:1px solid #ffffff22;border-radius:8px;color:#eaf3ed;background:#0b1b23;font-size:10px}
+.rf-filter button{height:37px;padding:0 13px;border:0;border-radius:8px;color:#0a1821;background:var(--rf-mint);font-size:9px;font-weight:950;cursor:pointer}
+.rf-summary{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:25px 0 14px;padding:14px 17px;border:1px solid #83e8c72b;border-radius:12px;background:#83e8c709}
+.rf-summary strong{color:#e7f4ed;font-size:11px}.rf-summary span{color:#9bb0b1;font-size:10px}
+.rf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.rf-card{overflow:hidden;border:1px solid #ffffff18;border-radius:18px;background:linear-gradient(145deg,#ffffff0c,#ffffff05);transition:.22s ease}
+.rf-card:hover{transform:translateY(-4px);border-color:#83e8c75b;box-shadow:0 18px 45px #0003}
+.rf-art{height:190px;position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 25% 30%,#83e8c744,transparent 28%),linear-gradient(120deg,#214a49,#102630 68%,#182c3c)}
+.rf-art.moonlight{background:radial-gradient(circle at 70% 25%,#b2c8e344,transparent 25%),linear-gradient(120deg,#27344d,#101c2d 65%,#29364a)}
+.rf-art:before,.rf-art:after{content:"";position:absolute;width:240px;height:240px;border:1px solid #ffffff24;border-radius:50%}
+.rf-art:before{transform:translate(-70px,55px)}.rf-art:after{transform:translate(100px,-80px)}
+.rf-vinyl{width:140px;height:140px;position:relative;z-index:1;border:1px solid #ffffff50;border-radius:50%;background:repeating-radial-gradient(circle,#0b1720 0 7px,#1c353a 8px 9px);box-shadow:0 15px 35px #0005}
+.rf-vinyl:after{content:"";position:absolute;inset:39%;border:1px solid #83e8c788;border-radius:50%;background:var(--rf-mint)}
+.rf-art.moonlight .rf-vinyl:after{background:#c3d1ed;border-color:#e0e7fa}
+.rf-art-label{position:absolute;z-index:2;bottom:16px;left:18px;color:#dcece5;font-size:9px;font-weight:900;letter-spacing:2px}
+.rf-body{padding:19px}.rf-meta{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}
+.rf-chip{padding:5px 9px;border-radius:20px;color:#a9e7d2;background:#83e8c715;font-size:8px;font-weight:900;letter-spacing:.5px}
+.rf-body h2{margin:0 0 5px;color:#f4f6ef;font-size:20px;font-weight:850}.rf-artist{margin:0;color:#a5b7b7;font-size:11px}
+.rf-reason{min-height:44px;margin:14px 0;padding:11px 12px;border-left:2px solid var(--rf-mint);border-radius:0 8px 8px 0;color:#b8d5cb;background:#83e8c70a;font-size:10px;line-height:1.65}
+.rf-actions{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rf-listen{min-height:39px;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;color:#0a1821;background:var(--rf-mint);font-size:9px;font-weight:950;letter-spacing:.7px;text-decoration:none}
+.rf-listen:hover{color:#0a1821;background:#a6f2d9}
+.rf-add-form{display:flex;gap:6px;min-width:0}.rf-add-form select{max-width:145px;min-width:0;height:36px;padding:0 8px;border:1px solid #ffffff20;border-radius:8px;color:#dcece5;background:#0b1b23;font-size:9px}.rf-add-form button{height:36px;padding:0 10px;border:0;border-radius:8px;color:#0a1821;background:#83e8c7;font-size:9px;font-weight:950;cursor:pointer}
+.rf-empty{grid-column:1/-1;padding:35px;border:1px dashed #83e8c755;border-radius:16px;color:#a8bbba;text-align:center;font-size:11px}
+.rf-note{margin-top:20px;padding:14px 16px;border:1px solid #ffffff15;border-radius:12px;color:#91a6a7;background:#ffffff06;font-size:10px;line-height:1.7}
+.rf-note strong{color:#dceae4}
+.rf-footer{padding:28px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
+@media(max-width:900px){.rf-topbar{flex-wrap:wrap}.rf-nav{order:3;width:100%}.rf-hero{align-items:flex-start;flex-direction:column}}
+@media(max-width:620px){.rf-topbar{padding:11px 4%}.rf-brand{font-size:17px}.rf-account span:not(.rf-avatar),.rf-logout{display:none}.rf-main{padding-top:28px}.rf-grid{grid-template-columns:1fr}.rf-filter{width:100%;flex-wrap:wrap}.rf-filter select{flex:1}.rf-actions{align-items:flex-start;flex-direction:column}.rf-add-form{width:100%}.rf-add-form select{flex:1;max-width:none}}
+</style>
+<div class="recommend-page">
+<header class="rf-topbar">
+<a class="rf-brand" href="{{ url_for('main.home') }}"><span class="rf-logo">♫</span> MOODIFY</a>
+<nav class="rf-nav" aria-label="Main navigation"><a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}">Music</a><a href="{{ url_for('main.playlist') }}">Playlists</a><a href="{{ url_for('main.moodometer') }}">Moodometer</a><a class="active" href="{{ url_for('main.recommendations') }}">For you</a></nav>
+<div class="rf-account"><span class="rf-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="rf-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
+</header>
+<main class="rf-main">
+<section class="rf-hero"><div><div class="rf-kicker">A MIX SHAPED AROUND YOU</div><h1>Something that fits<br><span>your moment.</span></h1><p>Recommendations are ranked using your saved music preferences and recent mood check-ins. Each card tells you why it appeared.</p></div>
+<form class="rf-filter" method="GET" action="{{ url_for('main.recommendations') }}"><label for="rfMood">MOOD</label><select id="rfMood" name="mood"><option value="">Use my latest mood</option>{% for mood in available_moods %}<option value="{{ mood }}" {% if selected_mood == mood %}selected{% endif %}>{{ mood }}</option>{% endfor %}</select><button type="submit">UPDATE MIX</button></form></section>
+<div class="rf-summary"><strong>{% if selected_mood %}A mix for {{ selected_mood }}{% else %}Your current listening mix{% endif %}</strong><span>Ranked from your profile and check-ins · {{ songs|length }} tracks in this collection</span></div>
+<section class="rf-grid">
+{% for song in songs %}
+<article class="rf-card">
+<div class="rf-art {{ 'moonlight' if song.art_class == 'moonlight' else '' }}"><div class="rf-vinyl"></div><div class="rf-art-label">MOODIFY · {{ song.art_mark }}</div></div>
+<div class="rf-body"><div class="rf-meta"><span class="rf-chip">{{ song.genre }}</span><span class="rf-chip">{{ song.mood }}</span><span class="rf-chip">{{ song.duration }}</span></div>
+<h2>{{ song.title }}</h2><p class="rf-artist">{{ song.artist }}</p>
+<div class="rf-reason">{% if song.has_personal_match %}Why this is here: {{ song.reasons|join(' · ') }}.{% else %}Explore something new: {{ song.reasons|join(' · ') }}.{% endif %}</div>
+<div class="rf-actions"><a class="rf-listen" href="{{ url_for('main.listen', slug=song.slug) }}">▶ LISTEN NOW</a>
+{% if playlists %}<form class="rf-add-form" method="POST" action="{{ url_for('main.add_to_playlist', playlist_id=0) }}" data-add-base="{{ url_for('main.add_to_playlist', playlist_id=0) }}"><select name="playlist_choice" aria-label="Choose playlist" required><option value="">Save to…</option>{% for pl in playlists %}<option value="{{ pl.id }}">{{ pl.name }}</option>{% endfor %}</select><input type="hidden" name="slug" value="{{ song.slug }}"><button type="submit">＋ SAVE</button></form>{% else %}<a class="rf-artist" href="{{ url_for('main.playlist') }}">Create a playlist to save</a>{% endif %}
+</div></div></article>
+{% else %}<div class="rf-empty">No recommendations are available in the catalogue yet.</div>{% endfor %}
+</section>
+<div class="rf-note"><strong>How MOODIFY chooses:</strong> it compares your selected mood, recent check-ins, preferred language and favourite singer with the catalogue details. If a track does not match those details, it is shown as a discovery pick—not falsely described as a personal match.</div>
+<footer class="rf-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
+</main></div>
+<script>
+document.querySelectorAll('.rf-add-form').forEach(function(form){
+ form.addEventListener('submit',function(event){
+  const chosen=form.querySelector('select[name="playlist_choice"]').value;
+  if(!chosen){event.preventDefault();return;}
+  form.action=form.dataset.addBase.replace('/0/','/'+chosen+'/');
+ });
+});
+</script>
 {% endblock %}
-
