@@ -1,0 +1,335 @@
+/* ==========================================================================
+   MOODIFY - motion & polish layer
+   --------------------------------------------------------------------------
+   Loaded from base.html after style.css. It sits ON TOP of the existing
+   per-page styles (navy / mint identity is kept) and never changes layout,
+   routes or content. Everything here degrades gracefully:
+     - no JavaScript  -> static navy background + glass surfaces still apply
+     - reduced motion -> animations are switched off in fx/*.js and below
+   Animated properties are limited to transform and opacity.
+   ========================================================================== */
+
+/* ---- Font (self-hosted Inter variable, SIL OFL) -------------------------- */
+@font-face {
+  font-family: "Inter Variable";
+  src: url("../vendor/fonts/inter-latin-wght-normal.woff2") format("woff2-variations"),
+       url("../vendor/fonts/inter-latin-wght-normal.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- Design tokens -------------------------------------------------------- */
+:root {
+  --fx-night: #0a1821;
+  --fx-ink: #eef3ee;
+  --fx-soft: #b8c9c6;
+  --fx-mute: #8da5a4;
+  --fx-mint: #83e8c7;
+
+  /* Set by fx/core.js from the current mood. Defaults are the original mint. */
+  --fx-accent: #83e8c7;
+  --fx-accent-rgb: 131, 232, 199;
+
+  --fx-line: rgba(190, 235, 222, 0.13);
+  --fx-line-strong: rgba(190, 235, 222, 0.26);
+  --fx-glass: rgba(14, 34, 44, 0.55);
+
+  --fx-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --fx-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --fx-lift:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.025),
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 16px 36px -20px rgba(0, 0, 0, 0.65);
+}
+
+/* ---- Base: static ambience (the canvas layer paints over this) ------------ */
+html {
+  color-scheme: dark;
+  background:
+    radial-gradient(ellipse at 8% 20%, rgba(35, 77, 76, 0.32), transparent 38%),
+    radial-gradient(ellipse at 92% 65%, rgba(41, 70, 91, 0.34), transparent 38%),
+    var(--fx-night);
+  background-attachment: fixed;
+}
+
+/* Page backgrounds become transparent so the ambient layer shows through.
+   Pages keep their own content, spacing and structure. */
+html body {
+  background: transparent !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html body :is(.home-page, .studio-page, .studio-register-page, .setup-page,
+  .library-page, .playlist-page, .playlist-detail-page, .player-page,
+  .recommend-page, .moodometer-page) {
+  background: transparent !important;
+  /* "clip" (unlike "hidden") keeps position: sticky working for the header. */
+  overflow: clip;
+}
+
+/* ---- Typography ----------------------------------------------------------- */
+html body,
+html body :is(button, input, select, textarea, .home-page, .studio-page,
+  .studio-register-page, .setup-page, .library-page, .playlist-page,
+  .playlist-detail-page, .player-page, .recommend-page, .moodometer-page) {
+  font-family: "Inter Variable", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+}
+
+html body :is(h1, h2, h3) { text-wrap: balance; }
+html body :is(p) { text-wrap: pretty; }
+
+/* Footers were 4.1:1 (below the 4.5:1 guideline for small text); lift slightly. */
+html body :is(.home-footer, .mo-footer, .player-footer, .rf-footer, .library-footer,
+  .pl-footer, .pd-footer, .setup-footer) {
+  color: #7f989a;
+}
+
+/* ---- Ambient background layer (built by fx/ambient.js) -------------------- */
+.fx-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.fx-orb-layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.fx-orb {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: var(--size, 60vmax);
+  height: var(--size, 60vmax);
+  margin: calc(var(--size, 60vmax) / -2) 0 0 calc(var(--size, 60vmax) / -2);
+  border-radius: 50%;
+  background: radial-gradient(circle at center, var(--orb-color, #83e8c7) 0%, transparent 66%);
+  opacity: var(--orb-opacity, 0.2);
+  will-change: transform, opacity;
+}
+
+.fx-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+}
+
+/* ---- Sticky glass navigation --------------------------------------------- */
+html body header[class$="-topbar"] {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: rgba(7, 20, 27, 0.6);
+  -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  backdrop-filter: blur(18px) saturate(1.25);
+  border-bottom: 1px solid var(--fx-line);
+  box-shadow: 0 12px 32px -22px rgba(0, 0, 0, 0.8);
+}
+
+html body header[class$="-topbar"] nav a {
+  transition: color 0.2s ease, background-color 0.25s ease;
+}
+
+/* ---- Glass surfaces -------------------------------------------------------- */
+/* Large translucent panels get a real frosted blur (kept to big surfaces so
+   the cost does not grow with the number of cards). */
+html body :is(.home-track-panel, .home-bottom-note, .mo-panel, .mo-stat, .mo-note,
+  .rf-summary, .rf-note, .player-queue, .player-mode-panel, .player-rights,
+  .library-filters, .pl-create) {
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  backdrop-filter: blur(12px) saturate(1.15);
+  box-shadow: var(--fx-lift);
+}
+
+/* Cards: layered depth + soft inner highlight (no blur per card). */
+html body :is(.home-taste-card, .home-track-card, .rf-card, .library-card, .pl-card,
+  .pd-track, .pd-add-card, .home-mood-panel, .home-hero, .pd-hero, .player-shell) {
+  box-shadow: var(--fx-lift);
+}
+
+html body :is(.home-search, .library-count) {
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* Non-themed pages (profile) share the same surface language. */
+html body > .container .list-group-item {
+  background: var(--fx-glass);
+  color: var(--fx-ink);
+  border-color: var(--fx-line);
+}
+html body > nav.navbar.bg-dark {
+  background: rgba(7, 20, 27, 0.6) !important;
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--fx-line);
+}
+
+/* ---- Focus: one consistent, comfortable ring ------------------------------ */
+html body :is(a, button, select, input, textarea, [role="tab"], [tabindex]):focus-visible {
+  outline: 2px solid rgba(var(--fx-accent-rgb), 0.85);
+  outline-offset: 3px;
+  border-radius: inherit;
+}
+html body :is(.home-search, .pl-create, .library-filters):focus-within {
+  border-color: rgba(var(--fx-accent-rgb), 0.55);
+  box-shadow: var(--fx-lift), 0 0 0 4px rgba(var(--fx-accent-rgb), 0.12);
+}
+
+/* ---- Spring press states (added by fx/pointer.js to buttons/links) -------- */
+html body .fx-press {
+  transition:
+    transform 0.45s var(--fx-spring),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.25s ease,
+    opacity 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
+  transform: scale(0.96);
+  transition-duration: 0.09s;
+}
+
+/* ---- Tilt cards + specular sheen ------------------------------------------ */
+.fx-tilt {
+  position: relative;
+  transform-style: preserve-3d;
+  /* Let GSAP own transform; keep colour/border transitions only. */
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.3s ease !important;
+}
+.fx-sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.fx-tilt:hover > .fx-sheen { opacity: 1; }
+.fx-sheen::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 300px;
+  margin: -150px 0 0 -150px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.17) 0%, rgba(var(--fx-accent-rgb), 0.07) 38%, transparent 68%);
+  transform: translate3d(var(--fx-sx, 50%), var(--fx-sy, 50%), 0);
+  will-change: transform;
+}
+
+/* ---- Cursor ring + spotlight (fine pointers only) -------------------------- */
+.fx-spotlight,
+.fx-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.fx-spotlight {
+  z-index: -1; /* above the ambient layer (later in DOM), below page content */
+  width: 560px;
+  height: 560px;
+  margin: -280px 0 0 -280px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--fx-accent-rgb), 0.11) 0%, rgba(var(--fx-accent-rgb), 0.04) 38%, transparent 68%);
+}
+.fx-cursor {
+  z-index: 9998;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 1.5px solid rgba(var(--fx-accent-rgb), 0.7);
+  border-radius: 50%;
+  background: rgba(var(--fx-accent-rgb), 0.05);
+}
+@media (hover: none), (pointer: coarse) {
+  .fx-spotlight, .fx-cursor { display: none !important; }
+}
+
+/* ---- Scroll progress ------------------------------------------------------- */
+.fx-progress {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  z-index: 9999;
+  height: 3px;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, rgba(var(--fx-accent-rgb), 0.55), var(--fx-accent) 60%, #d9fbef);
+  box-shadow: 0 0 14px rgba(var(--fx-accent-rgb), 0.55);
+  will-change: transform;
+}
+
+/* ---- Sound toggle ---------------------------------------------------------- */
+.fx-sound-toggle {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--fx-line-strong);
+  border-radius: 50%;
+  color: #cfe6df;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.45s var(--fx-spring);
+}
+.fx-sound-toggle:hover { color: var(--fx-accent); border-color: rgba(var(--fx-accent-rgb), 0.6); }
+.fx-sound-toggle:active { transform: scale(0.92); }
+.fx-sound-toggle svg { width: 18px; height: 18px; display: block; }
+.fx-sound-toggle .fx-ico-off { display: none; }
+.fx-sound-toggle[aria-pressed="false"] { color: #8da5a4; }
+.fx-sound-toggle[aria-pressed="false"] .fx-ico-on { display: none; }
+.fx-sound-toggle[aria-pressed="false"] .fx-ico-off { display: block; }
+.fx-sound-floating { position: fixed; right: 16px; top: 16px; z-index: 9990; background: rgba(7, 20, 27, 0.7); }
+.fx-header-cluster { display: flex; align-items: center; gap: 14px; }
+
+/* ---- Small SVG ornaments --------------------------------------------------- */
+.fx-wave-ico {
+  width: 18px;
+  height: 12px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  color: var(--fx-accent);
+}
+.fx-empty-art { display: block; width: 132px; height: auto; margin: 0 auto 14px; color: var(--fx-accent); }
+.fx-empty-art .fx-soft { opacity: 0.45; }
+.fx-has-art .pl-empty-mark { display: none; }
+.fx-btn-ico { width: 17px; height: 17px; display: block; }
+
+/* ---- Lenis (smooth scroll) base rules --------------------------------------- */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch] { overscroll-behavior: contain; }
+
+/* ---- Reduced motion ---------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .fx-press, .fx-tilt, .fx-sound-toggle { transition-duration: 0.01ms !important; }
+  .fx-spotlight, .fx-cursor, .fx-progress { display: none !important; }
+}
