@@ -1,0 +1,312 @@
+/* ==========================================================================
+   MOODIFY - flair layer (visual drama on top of fx.css)
+   Intro curtain, gradient headlines, glowing card rims, button shine,
+   marquee, navigation pill, ripples, grain.
+   Works without JavaScript (the static page simply has no extras).
+   ========================================================================== */
+
+@property --fx-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+/* ---- Veil: hides the page for the first instant while the curtain is built ---- */
+html.fx-veil::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #0a1821;
+  /* if scripts never arrive, the page must still appear */
+  animation: fx-veil-out 0.45s ease 3.2s forwards;
+}
+@keyframes fx-veil-out { to { opacity: 0; visibility: hidden; } }
+
+/* ---- Intro / page curtain ------------------------------------------------------- */
+.fx-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  pointer-events: auto;
+  overflow: hidden;
+}
+.fx-curtain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50.2%;
+  background:
+    radial-gradient(120% 140% at 50% 100%, rgba(var(--fx-accent-rgb), 0.16), transparent 60%),
+    #0a1821;
+  will-change: transform;
+}
+.fx-curtain-top { top: 0; }
+.fx-curtain-bottom {
+  bottom: 0;
+  background:
+    radial-gradient(120% 140% at 50% 0%, rgba(var(--fx-accent-rgb), 0.16), transparent 60%),
+    #0a1821;
+}
+.fx-curtain-top::after,
+.fx-curtain-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(var(--fx-accent-rgb), 0.9), transparent);
+  box-shadow: 0 0 22px 2px rgba(var(--fx-accent-rgb), 0.55);
+}
+.fx-curtain-top::after { bottom: 0; }
+.fx-curtain-bottom::after { top: 0; }
+
+.fx-intro-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  color: var(--fx-accent);
+}
+.fx-intro-logo { width: 74px; height: 74px; filter: drop-shadow(0 0 18px rgba(var(--fx-accent-rgb), 0.6)); }
+.fx-intro-word {
+  overflow: hidden;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 9px;
+  padding-left: 9px;
+  color: #eef3ee;
+}
+.fx-intro-bars { display: flex; align-items: center; gap: 5px; height: 26px; }
+.fx-intro-bars i {
+  display: block;
+  width: 4px;
+  height: 26px;
+  border-radius: 3px;
+  background: var(--fx-accent);
+  transform-origin: 50% 50%;
+}
+
+/* ---- Film grain + vignette ------------------------------------------------------ */
+.fx-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 9996;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+.fx-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(3, 9, 13, 0.55) 100%);
+  opacity: 1;
+}
+
+/* ---- Overlay layer for ripples / sparks / flood / trail ------------------------- */
+.fx-fxlayer {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fx-ring,
+.fx-spark,
+.fx-trail,
+.fx-flood {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.fx-ring {
+  width: 80px;
+  height: 80px;
+  margin: -40px 0 0 -40px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--fx-accent-rgb), 0.85);
+  box-shadow: 0 0 22px rgba(var(--fx-accent-rgb), 0.45), inset 0 0 18px rgba(var(--fx-accent-rgb), 0.25);
+}
+.fx-spark {
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+.fx-trail {
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(var(--fx-accent-rgb), 0.8);
+}
+.fx-flood {
+  width: 220px;
+  height: 220px;
+  margin: -110px 0 0 -110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(var(--c, 131, 232, 199), 0.55) 0%, rgba(var(--c, 131, 232, 199), 0.18) 45%, transparent 70%);
+}
+
+/* ---- Headlines ------------------------------------------------------------------ */
+.fx-w {
+  display: inline-block;
+  vertical-align: top;
+  overflow: hidden;
+  padding: 0.1em 0.06em 0.2em;
+  margin: -0.1em -0.06em -0.2em;
+}
+.fx-wi { display: inline-block; will-change: transform; }
+
+/* Pages colour every "h1 span" with the accent; our word wrappers are spans too,
+   so plain words must take the heading colour back. */
+html body h1 .fx-w,
+html body h1 .fx-wi:not(.fx-grad) {
+  color: inherit !important;
+  font: inherit !important;
+  display: inline-block !important;
+}
+
+html body .fx-wi.fx-grad {
+  color: transparent;
+  background-image: linear-gradient(100deg,
+    var(--fx-accent) 0%, color-mix(in srgb, var(--fx-accent) 45%, #ffffff) 38%, var(--fx-accent) 54%, rgba(var(--fx-accent-rgb), 0.78) 100%);
+  background-size: 260% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: fx-gradient-sweep 6s ease-in-out infinite;
+}
+@keyframes fx-gradient-sweep {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ---- Glowing rim on tilt cards -------------------------------------------------- */
+.fx-tilt { position: relative; }
+.fx-rim {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1.5px;
+  pointer-events: none;
+  opacity: 0;
+  background: conic-gradient(from var(--fx-angle),
+    transparent 0 50%, rgba(var(--fx-accent-rgb), 0.95) 70%, #ffffff 76%, rgba(var(--fx-accent-rgb), 0.95) 82%, transparent 94%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  transition: opacity 0.4s ease;
+}
+.fx-tilt:hover > .fx-rim,
+.fx-tilt:focus-within > .fx-rim {
+  opacity: 1;
+  animation: fx-spin 3.2s linear infinite;
+}
+@keyframes fx-spin { to { --fx-angle: 360deg; } }
+
+/* soft accent glow under hovered cards */
+html body .fx-tilt:hover {
+  box-shadow:
+    var(--fx-lift),
+    0 22px 50px -24px rgba(var(--fx-accent-rgb), 0.55);
+}
+
+/* ---- Button shine ---------------------------------------------------------------- */
+.fx-has-shine { position: relative; overflow: hidden; isolation: isolate; }
+.fx-shine {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: -70%;
+  width: 45%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  transform: translateX(0) skewX(-20deg);
+  opacity: 0;
+}
+.fx-has-shine:hover > .fx-shine,
+.fx-has-shine:focus-visible > .fx-shine {
+  animation: fx-shine 0.9s ease-out;
+}
+@keyframes fx-shine {
+  0% { transform: translateX(0) skewX(-20deg); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateX(520%) skewX(-20deg); opacity: 0; }
+}
+/* primary buttons also get a gentle accent halo that breathes */
+html body :is(.home-primary-link, .home-mood-submit, .setup-submit, .register-submit,
+  .studio-submit, .pd-primary, .rf-listen, .library-listen, .mo-checkin-link, .pl-primary) {
+  box-shadow: 0 10px 28px -12px rgba(var(--fx-accent-rgb), 0.75);
+}
+
+/* ---- Marquee -------------------------------------------------------------------- */
+.fx-marquee {
+  position: relative;
+  overflow: clip;
+  margin: 34px calc(50% - 50vw) 8px;
+  padding: 14px 0;
+  border-block: 1px solid var(--fx-line);
+  background: linear-gradient(90deg, rgba(var(--fx-accent-rgb), 0.07), transparent 30%, transparent 70%, rgba(var(--fx-accent-rgb), 0.07));
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  user-select: none;
+}
+.fx-mq-track { display: flex; width: max-content; will-change: transform; }
+.fx-mq-group { display: flex; align-items: center; flex-shrink: 0; }
+.fx-mq-word {
+  padding: 0 0.35em;
+  font-size: clamp(30px, 5.4vw, 72px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: transparent;
+  -webkit-text-stroke: 1.2px rgba(var(--fx-accent-rgb), 0.55);
+}
+.fx-mq-fill { color: rgba(var(--fx-accent-rgb), 0.9); -webkit-text-stroke: 0; }
+.fx-mq-dot { font-size: clamp(16px, 2.2vw, 28px); color: rgba(var(--fx-accent-rgb), 0.55); padding: 0 0.3em; }
+
+/* ---- Navigation pill ------------------------------------------------------------- */
+.fx-navpill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 0;
+  border-radius: 10px;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(180deg, rgba(var(--fx-accent-rgb), 0.2), rgba(var(--fx-accent-rgb), 0.08));
+  box-shadow: inset 0 0 0 1px rgba(var(--fx-accent-rgb), 0.32), 0 0 26px -6px rgba(var(--fx-accent-rgb), 0.6);
+}
+html body nav.fx-navpill-on a { position: relative; z-index: 1; }
+html body nav.fx-navpill-on a:hover,
+html body nav.fx-navpill-on a.active { background: transparent !important; }
+
+/* ---- Mobile / reduced motion -------------------------------------------------------- */
+@media (max-width: 720px) {
+  .fx-grain { opacity: 0.05; }
+  .fx-marquee { margin-top: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fx-grain, .fx-marquee { display: none; }
+  html body .fx-wi.fx-grad { animation: none; color: var(--fx-accent); background: none; -webkit-text-fill-color: currentColor; }
+  .fx-tilt:hover > .fx-rim { animation: none; }
+  .fx-has-shine:hover > .fx-shine { animation: none; }
+}
+
+/* ---- Card scrim: keeps small text readable over the brighter aurora ------------ */
+html body :is(.library-card, .pl-card, .mo-stat, .mo-panel, .rf-card, .home-taste-card,
+  .home-track-card, .pd-track, .pd-add-card, .library-filters, .rf-summary) {
+  background-color: rgba(8, 21, 29, 0.68) !important;
+}
+.fx-marquee { margin-bottom: 30px; }

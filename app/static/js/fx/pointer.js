@@ -32,6 +32,13 @@
     var magnets = (gsap && fine && !reduced) ? FX.qsa(MAGNETIC) : [];
     magnets.forEach(function (el) { el.classList.add('fx-magnetic'); });
 
+    /* shine sweep inside the magnetic (primary) buttons - works on touch too */
+    FX.qsa(MAGNETIC).forEach(function (btn) {
+      if (btn.querySelector('.fx-shine')) return;
+      btn.classList.add('fx-has-shine');
+      btn.appendChild(div('fx-shine'));
+    });
+
     /* ---- press state (all devices) --------------------------------------------- */
     var PRESS = [
       'button', 'input[type="submit"]', '.home-primary-link', '.home-secondary-link',
@@ -158,6 +165,7 @@
       card.classList.add('fx-tilt');
       var sheen = div('fx-sheen');
       card.appendChild(sheen);
+      card.appendChild(div('fx-rim'));
       gsap.set(card, { transformPerspective: 900 });
 
       var rect = null;

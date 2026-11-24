@@ -15,9 +15,9 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 FX_FILES = [
-    "css/fx.css",
+    "css/fx.css", "css/fx-flair.css",
     "js/fx/core.js", "js/fx/icons.js", "js/fx/ambient.js",
-    "js/fx/sound.js", "js/fx/motion.js", "js/fx/pointer.js",
+    "js/fx/sound.js", "js/fx/flair.js", "js/fx/motion.js", "js/fx/pointer.js",
     "vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/lenis.min.js",
     "vendor/fonts/inter-latin-wght-normal.woff2",
 ]
@@ -48,11 +48,13 @@ def test_public_pages_link_the_layer(client, path):
     resp = client.get(path)
     assert resp.status_code == 200
     html = resp.get_data(as_text=True)
-    assert "css/fx.css" in html
-    for name in ("core", "icons", "ambient", "sound", "motion", "pointer"):
+    assert "css/fx.css" in html and "css/fx-flair.css" in html
+    for name in ("core", "icons", "ambient", "sound", "flair", "motion", "pointer"):
         assert f"js/fx/{name}.js" in html
     # core.js must load before the modules that register with it
     assert html.index("js/fx/core.js") < html.index("js/fx/pointer.js")
+    # flair must run before motion so headings are split before reveals are set up
+    assert html.index("js/fx/flair.js") < html.index("js/fx/motion.js")
 
 
 def test_layer_has_no_external_dependencies():
