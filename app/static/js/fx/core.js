@@ -96,6 +96,17 @@
   };
   FX.endPreview = function () { FX.setMood(FX.baseMood, { preview: false }); };
 
+  /* Entrance gate: page reveals wait here until the intro curtain has opened.
+   * flair.js opens it; a timer guarantees it opens even if that script fails. */
+  var gateOpen = false, gateQueue = [];
+  FX.whenOpen = function (fn) { if (gateOpen) fn(); else gateQueue.push(fn); };
+  FX.openGate = function () {
+    if (gateOpen) return;
+    gateOpen = true;
+    gateQueue.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* keep going */ } });
+  };
+  global.setTimeout(FX.openGate, 3800);
+
   /* A mood <select> anywhere on the site drives the ambient layer. */
   var MOOD_SELECT = 'select[name="mood"], select[name="preferred_mood"]';
   doc.addEventListener('change', function (e) {

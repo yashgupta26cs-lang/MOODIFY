@@ -2,8 +2,8 @@
  *
  * Every sound is synthesised on the fly, so there are no audio files to load
  * or break. Sounds are deliberately quiet:
- *   click - soft mechanical tap on buttons, links, tabs
- *   tick  - ultra-quiet tick when hovering key cards / nav links (rate-limited)
+ *   click - crisp mechanical tap on buttons, links, tabs
+ *   tick  - very light tick when hovering key cards / nav links (rate-limited)
  *   chime - gentle two-note harmonic chime when a mood is chosen
  *   pop   - short rising pop when a form is submitted
  *
@@ -21,10 +21,10 @@
     var doc = document;
     var AC = global.AudioContext || global.webkitAudioContext;
     var KEY = 'moodify.sound';
-    var MASTER = 0.9;
+    var MASTER = 1;
 
     var enabled = FX.storageGet(KEY) !== 'off';
-    var ctx = null, master = null, send = null, noise = null;
+    var ctx = null, master = null, send = null, noise = null, noiseLong = null;
     var lastPlay = {};
     var lastTick = 0;
 
@@ -33,6 +33,11 @@
       master = ctx.createGain();
       master.gain.value = enabled ? MASTER : 0;
       var comp = ctx.createDynamicsCompressor();    // keeps overlapping sounds from clipping
+      comp.threshold.value = -10;
+      comp.knee.value = 8;
+      comp.ratio.value = 3;
+      comp.attack.value = 0.002;
+      comp.release.value = 0.12;
       master.connect(comp);
       comp.connect(ctx.destination);
 
@@ -51,6 +56,11 @@
       lp.connect(fb);
       fb.connect(delay);
       lp.connect(master);
+
+      var longLen = Math.floor(ctx.sampleRate * 0.4);
+      noiseLong = ctx.createBuffer(1, longLen, ctx.sampleRate);
+      var ld = noiseLong.getChannelData(0);
+      for (var j = 0; j < longLen; j++) ld[j] = Math.random() * 2 - 1;
 
       var len = Math.floor(ctx.sampleRate * 0.05);
       noise = ctx.createBuffer(1, len, ctx.sampleRate);
@@ -71,7 +81,7 @@
       var a = doc.getElementById('audioPlayer');
       return !!(a && !a.paused && !a.ended);
     }
-    function level() { return trackPlaying() ? 0.5 : 1; }   // duck under real music
+    function level() { return trackPlaying() ? 0.45 : 1; }   // duck under real music
 
     /* ---- voices ------------------------------------------------------------- */
     function tone(type, f0, f1, t, attack, decay, peak, wet) {
@@ -90,40 +100,72 @@
       o.stop(t + attack + decay + 0.05);
     }
 
+    /* Voices are tuned to be clearly audible on laptop speakers and phones:
+     * most of the energy sits between 400 Hz and 4 kHz (small speakers cannot
+     * reproduce a low thump). Peaks land around -9 dBFS for a click. */
+    function burst(t, centre, q, peak, decay) {
+      var n = ctx.createBufferSource();
+      n.buffer = noise;
+      var bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = centre;
+      bp.Q.value = q;
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(peak, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+      n.connect(bp); bp.connect(g); g.connect(master);
+      n.start(t); n.stop(t + decay + 0.01);
+    }
+
     var VOICES = {
       click: function (v) {
         var t = ctx.currentTime;
-        tone('sine', 190, 70, t, 0.004, 0.06, 0.3 * v);
+        burst(t, 3200, 0.9, 0.3 * v, 0.03);               // crisp key-cap transient
+        tone('triangle', 1650, 560, t, 0.002, 0.055, 0.3 * v);   // plastic "tock"
+        tone('sine', 330, 150, t, 0.003, 0.08, 0.24 * v);        // warm body
+      },
+      swoosh: function (v) {
+        var t = ctx.currentTime;
         var n = ctx.createBufferSource();
-        n.buffer = noise;
-        var hp = ctx.createBiquadFilter();
-        hp.type = 'highpass';
-        hp.frequency.value = 2200;
+        n.buffer = noiseLong;
+        var bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 1.3;
+        bp.frequency.setValueAtTime(500, t);
+        bp.frequency.exponentialRampToValueAtTime(3400, t + 0.3);
         var g = ctx.createGain();
-        g.gain.setValueAtTime(0.2 * v, t);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
-        n.connect(hp); hp.connect(g); g.connect(master);
-        n.start(t); n.stop(t + 0.04);
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.2 * v, t + 0.07);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
+        n.connect(bp); bp.connect(g); g.connect(master);
+        n.start(t); n.stop(t + 0.4);
       },
       tick: function (v) {
-        tone('triangle', 2500, 2050, ctx.currentTime, 0.002, 0.014, 0.05 * v);
+        var t = ctx.currentTime;
+        tone('triangle', 2900, 2300, t, 0.002, 0.02, 0.09 * v);
+        burst(t, 5200, 1.5, 0.05 * v, 0.012);
       },
       pop: function (v) {
-        tone('sine', 520, 900, ctx.currentTime, 0.005, 0.1, 0.16 * v);
+        var t = ctx.currentTime;
+        tone('sine', 420, 980, t, 0.004, 0.13, 0.3 * v);
+        tone('triangle', 840, 1960, t, 0.004, 0.09, 0.1 * v);
+        burst(t, 4200, 1.2, 0.12 * v, 0.02);
       },
       chime: function (v, step) {
         // pentatonic steps so every mood sounds different but always consonant
         var ratios = [1, 1.125, 1.25, 1.5, 1.667, 2, 2.25];
         var f = 523.25 * ratios[(step || 0) % ratios.length];
         var t = ctx.currentTime;
-        tone('sine', f, f, t, 0.006, 0.9, 0.1 * v, true);
-        tone('sine', f * 2, f * 2, t, 0.006, 0.55, 0.035 * v, true);
-        tone('sine', f * 3, f * 3, t, 0.006, 0.3, 0.012 * v, false);
-        tone('sine', f * 1.5, f * 1.5, t + 0.07, 0.006, 0.8, 0.065 * v, true);
+        tone('sine', f, f, t, 0.006, 1.1, 0.25 * v, true);
+        tone('sine', f * 2, f * 2, t, 0.006, 0.7, 0.1 * v, true);
+        tone('sine', f * 3, f * 3, t, 0.006, 0.4, 0.05 * v, false);
+        tone('sine', f * 1.5, f * 1.5, t + 0.08, 0.006, 0.95, 0.16 * v, true);
+        tone('sine', f * 2.5, f * 2.5, t + 0.16, 0.006, 0.8, 0.07 * v, true);
+        burst(t, 6000, 2, 0.06 * v, 0.02);                 // tiny sparkle on the attack
       }
     };
 
-    var MIN_GAP = { click: 25, tick: 110, pop: 80, chime: 150 };
+    var MIN_GAP = { click: 25, tick: 110, pop: 80, chime: 150, swoosh: 300 };
 
     function play(name, arg) {
       if (!enabled) return;

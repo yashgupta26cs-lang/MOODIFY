@@ -67,7 +67,7 @@
       '.pd-back', '.pd-hero', '.pd-section', '.pd-track', '.pd-add-card', '.pd-empty',
       '.mo-hero', '.mo-stat', '.mo-panel', '.mo-note',
       '.rf-hero', '.rf-summary', '.rf-card', '.rf-note', '.rf-empty',
-      '.player-back', '.player-shell', '.player-rights'
+      '.player-back', '.player-shell', '.player-rights', '.fx-marquee'
     ].join(',');
 
     if (!hasOwnEntrance) {
@@ -80,7 +80,7 @@
           batchMax: 8,
           interval: 0.1,
           onEnter: function (batch) {
-            gsap.to(batch, {
+            FX.whenOpen(function () { gsap.to(batch, {
               opacity: 1,
               y: 0,
               duration: 0.9,
@@ -95,7 +95,7 @@
                   if (!el.classList.contains('fx-tilt')) gsap.set(el, { clearProps: 'transform' });
                 });
               }
-            });
+            }); });
           }
         });
 

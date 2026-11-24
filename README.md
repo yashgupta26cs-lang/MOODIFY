@@ -93,7 +93,7 @@ The interface has an optional front-end layer that adds a mood-reactive ambient
 background, smooth scrolling, scroll reveals, a cursor glow, magnetic buttons,
 tilt cards and synthesised interface sounds (with a Sound On/Mute button in the header).
 
-- Files: `app/static/css/fx.css` and `app/static/js/fx/*.js`, loaded from `base.html`. No backend code is involved.
+- Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. `flair.js` adds the intro curtain and page transitions, word-by-word headlines, click ripples, the mood colour flood, the sparkle trail, the home-page mood marquee and the gliding nav highlight. No backend code is involved.
 - Libraries (GSAP, ScrollTrigger, Lenis) and the Inter font are stored in `app/static/vendor/` (see its README for versions and licences). Nothing is loaded from a CDN by this layer.
 - It respects `prefers-reduced-motion`; the cursor, tilt and magnetic effects are disabled on touch devices.
 - To see the site without the scripts, add `?fx=off` to any URL.

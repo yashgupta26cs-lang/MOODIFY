@@ -26,14 +26,16 @@
     /* ---- orbs ------------------------------------------------------------ */
     var LAYERS = [
       { depth: 0.25, scroll: 0.05, orbs: [
-        { x: '12%', y: '28%', size: '72vmax', c: 0, o: 0.17 },
-        { x: '88%', y: '72%', size: '60vmax', c: 1, o: 0.15 }
+        { x: '10%', y: '26%', size: '82vmax', c: 0, o: 0.42 },
+        { x: '90%', y: '74%', size: '70vmax', c: 1, o: 0.38 }
       ] },
       { depth: 0.5, scroll: 0.1, orbs: [
-        { x: '62%', y: '12%', size: '46vmax', c: 2, o: 0.12 }
+        { x: '64%', y: '8%', size: '54vmax', c: 2, o: 0.34 },
+        { x: '30%', y: '60%', size: '42vmax', c: 1, o: 0.2 }
       ] },
       { depth: 0.85, scroll: 0.18, orbs: [
-        { x: '22%', y: '88%', size: '36vmax', c: 0, o: 0.1 }
+        { x: '22%', y: '92%', size: '44vmax', c: 0, o: 0.3 },
+        { x: '86%', y: '22%', size: '34vmax', c: 2, o: 0.26 }
       ] }
     ];
 
@@ -64,10 +66,10 @@
       layers.forEach(function (layer) {
         layer.orbs.forEach(function (o) {
           o.tween = gsap.to(o.el, {
-            xPercent: 'random(-16, 16)',
-            yPercent: 'random(-16, 16)',
-            scale: 'random(0.88, 1.2)',
-            duration: 'random(14, 26)',
+            xPercent: 'random(-24, 24)',
+            yPercent: 'random(-24, 24)',
+            scale: 'random(0.85, 1.3)',
+            duration: 'random(11, 20)',
             ease: 'sine.inOut',
             repeat: -1,
             yoyo: true,
