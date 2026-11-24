@@ -1,13 +1,19 @@
-/* MOODIFY motion layer - mood-reactive ambient background
+/* MOODIFY motion layer - mood-reactive ambient background (aurora)
  *
- * Soft colour orbs (plain divs animated with transform/opacity only, so they
- * stay on the GPU compositor) drift and "morph" behind the page, with a light
- * canvas of floating particles. Colours follow the current mood (see
- * MoodifyFX.moods in core.js), and the layers react to the pointer (parallax),
- * to scrolling (depth) and to the user choosing a mood (a small pulse).
+ * Performance note: the aurora is painted into ONE small canvas (a few hundred
+ * pixels wide) that the browser scales up to the full window. Scaling makes
+ * the soft gradients look smooth, and the browser only has to composite a
+ * single layer, instead of several window-sized animated layers. The cursor
+ * spotlight and the edge vignette are painted into the same canvas, so they
+ * cost nothing extra. A second, light canvas draws floating particles.
+ *
+ * Colours follow the current mood (MoodifyFX.moods in core.js). The aurora
+ * drifts on its own, leans away from the pointer, shifts slightly when you
+ * scroll and swells when you choose a mood.
  *
  * Without JavaScript the static navy gradient from fx.css remains.
- * With prefers-reduced-motion the layer is drawn once and does not move.
+ * With prefers-reduced-motion the aurora is drawn once and does not move.
+ * In "lite" mode (slow computers, detected automatically) it is simpler.
  */
 (function (global) {
   'use strict';
@@ -17,135 +23,114 @@
   FX.register('ambient', function (FX) {
     var gsap = global.gsap;
     if (!gsap) return;
-
     var doc = document;
     var reduced = FX.flags.reducedMotion;
+    var fine = FX.flags.finePointer;
 
-    function div(cls) { var el = doc.createElement('div'); el.className = cls; return el; }
+    function el(tag, cls) { var e = doc.createElement(tag); e.className = cls; return e; }
 
-    /* ---- orbs ------------------------------------------------------------ */
-    var LAYERS = [
-      { depth: 0.25, scroll: 0.05, orbs: [
-        { x: '10%', y: '26%', size: '82vmax', c: 0, o: 0.42 },
-        { x: '90%', y: '74%', size: '70vmax', c: 1, o: 0.38 }
-      ] },
-      { depth: 0.5, scroll: 0.1, orbs: [
-        { x: '64%', y: '8%', size: '54vmax', c: 2, o: 0.34 },
-        { x: '30%', y: '60%', size: '42vmax', c: 1, o: 0.2 }
-      ] },
-      { depth: 0.85, scroll: 0.18, orbs: [
-        { x: '22%', y: '92%', size: '44vmax', c: 0, o: 0.3 },
-        { x: '86%', y: '22%', size: '34vmax', c: 2, o: 0.26 }
-      ] }
+    /* ---- aurora definition ---------------------------------------------------
+     * bx/by: resting position (0..1), size: diameter in vmax, c: palette index,
+     * a: strength, depth/scroll: parallax amounts, sx/sy/ph: drift speed & phase. */
+    var ORBS = [
+      { bx: 0.10, by: 0.26, size: 82, c: 0, a: 0.42, depth: 0.25, scroll: 0.05, sx: 0.050, sy: 0.040, ph: 0.0, amp: 0.10 },
+      { bx: 0.90, by: 0.74, size: 70, c: 1, a: 0.38, depth: 0.25, scroll: 0.05, sx: 0.040, sy: 0.060, ph: 1.7, amp: 0.10 },
+      { bx: 0.64, by: 0.08, size: 54, c: 2, a: 0.34, depth: 0.50, scroll: 0.10, sx: 0.065, sy: 0.045, ph: 3.1, amp: 0.12 },
+      { bx: 0.30, by: 0.60, size: 42, c: 1, a: 0.20, depth: 0.50, scroll: 0.10, sx: 0.055, sy: 0.070, ph: 4.2, amp: 0.12 },
+      { bx: 0.22, by: 0.92, size: 44, c: 0, a: 0.30, depth: 0.85, scroll: 0.18, sx: 0.070, sy: 0.050, ph: 5.0, amp: 0.14 },
+      { bx: 0.86, by: 0.22, size: 34, c: 2, a: 0.26, depth: 0.85, scroll: 0.18, sx: 0.060, sy: 0.075, ph: 2.4, amp: 0.14 }
     ];
 
-    var host = div('fx-ambient');
+    var host = el('div', 'fx-ambient');
     host.setAttribute('aria-hidden', 'true');
+    var aurora = el('canvas', 'fx-aurora');
+    host.appendChild(aurora);
+    var actx = aurora.getContext && aurora.getContext('2d');
 
-    var startPalette = FX.palette.colors;
-    var layers = LAYERS.map(function (def) {
-      var outer = div('fx-orb-layer');
-      var inner = div('fx-orb-layer');
-      outer.appendChild(inner);
-      var orbs = def.orbs.map(function (od) {
-        var el = div('fx-orb');
-        el.style.setProperty('--x', od.x);
-        el.style.setProperty('--y', od.y);
-        el.style.setProperty('--size', od.size);
-        el.style.setProperty('--orb-color', FX.rgbString(FX.hexToRgb(startPalette[od.c % startPalette.length])));
-        inner.appendChild(el);
-        gsap.set(el, { opacity: od.o });
-        return { el: el, def: od, tween: null };
-      });
-      host.appendChild(outer);
-      return { def: def, outer: outer, inner: inner, orbs: orbs };
-    });
+    var particleCanvas = el('canvas', 'fx-particles');
+    host.appendChild(particleCanvas);
+    var pctx = particleCanvas.getContext && particleCanvas.getContext('2d');
 
-    /* drifting / morphing motion */
-    if (!reduced) {
-      layers.forEach(function (layer) {
-        layer.orbs.forEach(function (o) {
-          o.tween = gsap.to(o.el, {
-            xPercent: 'random(-24, 24)',
-            yPercent: 'random(-24, 24)',
-            scale: 'random(0.85, 1.3)',
-            duration: 'random(11, 20)',
-            ease: 'sine.inOut',
-            repeat: -1,
-            yoyo: true,
-            repeatRefresh: true
-          });
-          o.tween.timeScale(FX.palette.speed);
-        });
-      });
-    }
+    var cols = FX.palette.colors.map(FX.hexToRgb);
+    var targetCols = cols.map(function (c) { return c.slice(); });
+    var state = { pulse: 0 };
+    var clock = 0;
+    var W = 0, H = 0, AW = 0, AH = 0, scale = 1, vmax = 1;
+    var px = 0, py = 0, tpx = 0, tpy = 0;      // eased pointer lean (-0.5..0.5)
+    var mx = 0.5, my = 0.5, tmx = 0.5, tmy = 0.5; // eased pointer position (0..1)
+    var pointerSeen = false;
 
-    function applyPalette(palette, instant) {
-      layers.forEach(function (layer) {
-        layer.orbs.forEach(function (o) {
-          var rgb = FX.rgbString(FX.hexToRgb(palette.colors[o.def.c % palette.colors.length]));
-          gsap.to(o.el, {
-            '--orb-color': rgb,
-            duration: instant || reduced ? 0 : 1.6,
-            ease: 'sine.inOut',
-            overwrite: 'auto'
-          });
-          if (o.tween) gsap.to(o.tween, { timeScale: palette.speed, duration: 1.5, ease: 'sine.inOut', overwrite: 'auto' });
-        });
-      });
-    }
-
-    /* pointer parallax (fine pointers only) */
-    if (!reduced && FX.flags.finePointer) {
-      layers.forEach(function (layer) {
-        layer.qx = gsap.quickTo(layer.inner, 'x', { duration: 1.4, ease: 'power3.out' });
-        layer.qy = gsap.quickTo(layer.inner, 'y', { duration: 1.4, ease: 'power3.out' });
-      });
-      doc.addEventListener('pointermove', function (e) {
-        if (e.pointerType && e.pointerType !== 'mouse') return;
-        var nx = e.clientX / global.innerWidth - 0.5;
-        var ny = e.clientY / global.innerHeight - 0.5;
-        layers.forEach(function (layer) {
-          layer.qx(-nx * layer.def.depth * 90);
-          layer.qy(-ny * layer.def.depth * 90);
-        });
-      }, { passive: true });
-    }
-
-    /* scroll depth */
-    if (!reduced) {
-      var scrollTick = false;
-      var onScroll = function () {
-        if (scrollTick) return;
-        scrollTick = true;
-        global.requestAnimationFrame(function () {
-          scrollTick = false;
-          var y = global.pageYOffset || 0;
-          layers.forEach(function (layer) { gsap.set(layer.outer, { y: -y * layer.def.scroll }); });
-        });
-      };
-      global.addEventListener('scroll', onScroll, { passive: true });
-    }
-
-    /* ---- particles ------------------------------------------------------- */
-    var canvas = doc.createElement('canvas');
-    canvas.className = 'fx-particles';
-    host.appendChild(canvas);
-    var ctx = canvas.getContext && canvas.getContext('2d');
-
-    var W = 0, H = 0;
-    var dpr = Math.min(global.devicePixelRatio || 1, 1.5);
     function resize() {
-      if (!ctx) return;
       W = global.innerWidth;
       H = global.innerHeight;
-      canvas.width = Math.round(W * dpr);
-      canvas.height = Math.round(H * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      if (reduced) drawFrame(0);
+      vmax = Math.max(W, H);
+      var base = FX.lite ? 220 : 340;       // pixel width of the aurora canvas
+      AW = base;
+      AH = Math.max(120, Math.round(base * H / Math.max(W, 1)));
+      aurora.width = AW;
+      aurora.height = AH;
+      scale = AW / W;
+      var dpr = Math.min(global.devicePixelRatio || 1, 1.5);
+      particleCanvas.width = Math.round(W * dpr);
+      particleCanvas.height = Math.round(H * dpr);
+      if (pctx) pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (reduced) drawAurora(0);
     }
 
-    var COUNT = FX.flags.smallScreen ? 20 : 44;
+    function rgba(c, a) {
+      return 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + a.toFixed(3) + ')';
+    }
+
+    function drawAurora(dt) {
+      if (!actx) return;
+      var k = Math.min(1, dt * 2.4);
+      for (var c = 0; c < 3; c++) for (var j = 0; j < 3; j++) cols[c][j] += (targetCols[c][j] - cols[c][j]) * k;
+      px += (tpx - px) * Math.min(1, dt * 2.2);
+      py += (tpy - py) * Math.min(1, dt * 2.2);
+      mx += (tmx - mx) * Math.min(1, dt * 7);
+      my += (tmy - my) * Math.min(1, dt * 7);
+
+      var speed = FX.palette.speed || 1;
+      var sy = global.pageYOffset || 0;
+      actx.clearRect(0, 0, AW, AH);
+      for (var i = 0; i < ORBS.length; i++) {
+        var o = ORBS[i];
+        var t = clock * speed;
+        var x = (o.bx + Math.sin(t * o.sx * 6.28 + o.ph) * o.amp - px * o.depth * 0.18) * AW;
+        var y = (o.by + Math.cos(t * o.sy * 6.28 + o.ph * 1.3) * o.amp - py * o.depth * 0.18) * AH - sy * o.scroll * scale;
+        var grow = 1 + state.pulse * 0.14;
+        var r = (o.size / 100) * vmax * 0.47 * scale * grow;
+        var a = o.a * 0.78 * (1 + state.pulse * 0.9);
+        var col = cols[o.c % 3];
+        var g = actx.createRadialGradient(x, y, 0, x, y, r);
+        g.addColorStop(0, rgba(col, a));
+        g.addColorStop(0.55, rgba(col, a * 0.38));
+        g.addColorStop(1, rgba(col, 0));
+        actx.fillStyle = g;
+        actx.fillRect(x - r, y - r, r * 2, r * 2);
+      }
+
+      /* cursor spotlight, painted into the same canvas */
+      if (pointerSeen && !FX.lite && fine) {
+        var sr = 300 * scale;
+        var sx = mx * AW, sy2 = my * AH;
+        var sg = actx.createRadialGradient(sx, sy2, 0, sx, sy2, sr);
+        sg.addColorStop(0, rgba(cols[0], 0.24));
+        sg.addColorStop(1, rgba(cols[0], 0));
+        actx.fillStyle = sg;
+        actx.fillRect(sx - sr, sy2 - sr, sr * 2, sr * 2);
+      }
+
+      /* edge vignette keeps the corners calm and text readable */
+      var vg = actx.createRadialGradient(AW / 2, AH * 0.46, Math.min(AW, AH) * 0.45, AW / 2, AH * 0.5, Math.max(AW, AH) * 0.78);
+      vg.addColorStop(0, 'rgba(3,9,13,0)');
+      vg.addColorStop(1, 'rgba(3,9,13,0.55)');
+      actx.fillStyle = vg;
+      actx.fillRect(0, 0, AW, AH);
+    }
+
+    /* ---- particles ------------------------------------------------------------ */
+    var COUNT = FX.flags.smallScreen ? 14 : 30;
     var particles = [];
     for (var i = 0; i < COUNT; i++) {
       particles.push({
@@ -154,18 +139,12 @@
         ph: FX.rand(0, 6.28), tw: FX.rand(0.4, 1.2), k: i % 3, a: FX.rand(0.25, 0.6)
       });
     }
-    var cols = FX.palette.colors.map(FX.hexToRgb);
-    var targetCols = cols.map(function (c) { return c.slice(); });
-    var state = { boost: 1 };
-    var clock = 0;
 
-    function drawFrame(dt) {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, W, H);
-      var speed = (FX.palette.speed || 1) * state.boost;
-      for (var c = 0; c < 3; c++) {
-        for (var k = 0; k < 3; k++) cols[c][k] += (targetCols[c][k] - cols[c][k]) * Math.min(1, dt * 2.2);
-      }
+    function drawParticles(dt) {
+      if (!pctx) return;
+      pctx.clearRect(0, 0, W, H);
+      if (FX.lite) return;
+      var speed = FX.palette.speed || 1;
       for (var n = 0; n < particles.length; n++) {
         var p = particles[n];
         p.y -= p.vy * dt * speed;
@@ -175,16 +154,16 @@
         if (p.x > 1.02) p.x = -0.02;
         var alpha = p.a * (0.6 + 0.4 * Math.sin(clock * p.tw + p.ph));
         var col = cols[p.k];
-        var rgb = Math.round(col[0]) + ',' + Math.round(col[1]) + ',' + Math.round(col[2]);
-        var px = p.x * W, py = p.y * H;
-        ctx.fillStyle = 'rgba(' + rgb + ',' + (alpha * 0.22).toFixed(3) + ')';
-        ctx.beginPath(); ctx.arc(px, py, p.r * 3.2, 0, 6.2832); ctx.fill();
-        ctx.fillStyle = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
-        ctx.beginPath(); ctx.arc(px, py, p.r, 0, 6.2832); ctx.fill();
+        var rgb = (col[0] | 0) + ',' + (col[1] | 0) + ',' + (col[2] | 0);
+        var qx = p.x * W, qy = p.y * H;
+        pctx.fillStyle = 'rgba(' + rgb + ',' + (alpha * 0.2).toFixed(3) + ')';
+        pctx.beginPath(); pctx.arc(qx, qy, p.r * 3, 0, 6.2832); pctx.fill();
+        pctx.fillStyle = 'rgba(' + rgb + ',' + alpha.toFixed(3) + ')';
+        pctx.beginPath(); pctx.arc(qx, qy, p.r, 0, 6.2832); pctx.fill();
       }
     }
 
-    /* ---- mount ----------------------------------------------------------- */
+    /* ---- mount ------------------------------------------------------------------ */
     doc.body.insertBefore(host, doc.body.firstChild);
     resize();
     var resizeTimer;
@@ -192,35 +171,49 @@
       global.clearTimeout(resizeTimer);
       resizeTimer = global.setTimeout(resize, 150);
     });
+    drawAurora(0);
 
     if (!reduced) {
-      var acc = 0;
+      /* pointer lean + spotlight target (just records numbers; drawing is on the ticker) */
+      if (fine) {
+        doc.addEventListener('pointermove', function (e) {
+          if (e.pointerType && e.pointerType !== 'mouse') return;
+          pointerSeen = true;
+          tmx = e.clientX / global.innerWidth;
+          tmy = e.clientY / global.innerHeight;
+          tpx = tmx - 0.5;
+          tpy = tmy - 0.5;
+        }, { passive: true });
+        doc.documentElement.addEventListener('mouseleave', function () { pointerSeen = false; });
+      }
+
+      var acc = 0, pacc = 0;
       gsap.ticker.add(function (time, deltaTime) {
         acc += deltaTime;
-        if (acc < 32) return;            // ~30fps is plenty for slow ambience
+        var step = FX.lite ? 50 : 33;            // 20 / 30 frames per second
+        if (acc < step) return;
         var dt = Math.min(acc, 100) / 1000;
         acc = 0;
         clock += dt;
-        drawFrame(dt);
+        drawAurora(dt);
+        pacc += dt;
+        if (pacc >= 0.066) { drawParticles(pacc); pacc = 0; }
       });
     }
 
-    /* ---- reactions -------------------------------------------------------- */
+    /* ---- reactions ----------------------------------------------------------------- */
     function pulse() {
       if (reduced) return;
-      gsap.to(state, { boost: 1, duration: 1.8, ease: 'power2.out', startAt: { boost: 4 }, overwrite: 'auto' });
-      layers.forEach(function (layer) {
-        gsap.fromTo(layer.inner, { scale: 1 }, { scale: 1.07, duration: 0.45, ease: 'sine.out', yoyo: true, repeat: 1, overwrite: 'auto' });
-      });
+      gsap.fromTo(state, { pulse: 1 }, { pulse: 0, duration: 1.8, ease: 'power2.out', overwrite: true });
     }
 
     FX.on('mood', function (d) {
-      applyPalette(d.palette, false);
       targetCols = d.palette.colors.map(FX.hexToRgb);
-      if (reduced) drawFrame(0);
+      if (reduced) { cols = targetCols.map(function (c) { return c.slice(); }); drawAurora(0); }
       if (d.action) pulse();
     });
     FX.on('pulse', pulse);
+    FX.on('lite', function () { resize(); });
 
     /* Login / register mood chips preview their mood on hover or focus. */
     FX.qsa('.mood-tag').forEach(function (chip) {
@@ -231,7 +224,6 @@
       chip.addEventListener('pointerleave', function () { FX.endPreview(); });
     });
 
-    applyPalette(FX.palette, true);
     FX.ambient = { pulse: pulse };
   });
 })(window);

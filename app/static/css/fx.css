@@ -118,6 +118,13 @@ html body :is(.home-footer, .mo-footer, .player-footer, .rf-footer, .library-foo
   will-change: transform, opacity;
 }
 
+.fx-aurora {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .fx-particles {
   position: absolute;
   inset: 0;
@@ -126,14 +133,16 @@ html body :is(.home-footer, .mo-footer, .player-footer, .rf-footer, .library-foo
   opacity: 0.85;
 }
 
+/* NOTE: backdrop-filter (live blur) is deliberately not used anywhere. The aurora
+   behind the page is animated, so every blurred panel would be re-blurred on
+   every frame, which made the cursor feel sluggish on many computers. */
+
 /* ---- Sticky glass navigation --------------------------------------------- */
 html body header[class$="-topbar"] {
   position: sticky;
   top: 0;
   z-index: 60;
-  background: rgba(7, 20, 27, 0.6);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  backdrop-filter: blur(18px) saturate(1.25);
+  background: rgba(7, 20, 27, 0.84);
   border-bottom: 1px solid var(--fx-line);
   box-shadow: 0 12px 32px -22px rgba(0, 0, 0, 0.8);
 }
@@ -148,8 +157,6 @@ html body header[class$="-topbar"] nav a {
 html body :is(.home-track-panel, .home-bottom-note, .mo-panel, .mo-stat, .mo-note,
   .rf-summary, .rf-note, .player-queue, .player-mode-panel, .player-rights,
   .library-filters, .pl-create) {
-  -webkit-backdrop-filter: blur(12px) saturate(1.15);
-  backdrop-filter: blur(12px) saturate(1.15);
   box-shadow: var(--fx-lift);
 }
 
@@ -160,8 +167,6 @@ html body :is(.home-taste-card, .home-track-card, .rf-card, .library-card, .pl-c
 }
 
 html body :is(.home-search, .library-count) {
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
 }
 
 /* Non-themed pages (profile) share the same surface language. */
@@ -171,9 +176,7 @@ html body > .container .list-group-item {
   border-color: var(--fx-line);
 }
 html body > nav.navbar.bg-dark {
-  background: rgba(7, 20, 27, 0.6) !important;
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
+  background: rgba(7, 20, 27, 0.84) !important;
   border-bottom: 1px solid var(--fx-line);
 }
 

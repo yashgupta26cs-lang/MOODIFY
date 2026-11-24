@@ -56,14 +56,10 @@
     /* ---- cursor ring + spotlight -------------------------------------------------- */
     var HOVERABLE = 'a, button, select, input, textarea, label, [role="button"], [role="tab"], .fx-tilt';
     var ring = div('fx-cursor');
-    var glow = div('fx-spotlight');
-    doc.body.appendChild(glow);
     doc.body.appendChild(ring);
-    gsap.set([ring, glow], { x: -400, y: -400, opacity: 0 });
+    gsap.set(ring, { x: -400, y: -400, opacity: 0 });
     var ringX = gsap.quickTo(ring, 'x', { duration: 0.35, ease: 'power3.out' });
     var ringY = gsap.quickTo(ring, 'y', { duration: 0.35, ease: 'power3.out' });
-    var glowX = gsap.quickTo(glow, 'x', { duration: 0.9, ease: 'power3.out' });
-    var glowY = gsap.quickTo(glow, 'y', { duration: 0.9, ease: 'power3.out' });
     var shown = false;
     var overHoverable = false;
     var pressed = false;
@@ -82,12 +78,10 @@
       if (e.pointerType && e.pointerType !== 'mouse') return;
       if (!shown) {
         shown = true;
-        gsap.set([ring, glow], { x: e.clientX, y: e.clientY });
+        gsap.set(ring, { x: e.clientX, y: e.clientY });
         gsap.to(ring, { opacity: 0.7, duration: 0.4 });
-        gsap.to(glow, { opacity: 1, duration: 0.8 });
       }
       ringX(e.clientX); ringY(e.clientY);
-      glowX(e.clientX); glowY(e.clientY);
       var over = !!(e.target && e.target.closest && e.target.closest(HOVERABLE));
       if (over !== overHoverable) { overHoverable = over; ringState(); }
     }, { passive: true });
@@ -98,7 +92,7 @@
     doc.addEventListener('pointerup', function () { pressed = false; ringState(); });
     doc.documentElement.addEventListener('mouseleave', function () {
       shown = false;
-      gsap.to([ring, glow], { opacity: 0, duration: 0.3 });
+      gsap.to(ring, { opacity: 0, duration: 0.3 });
     });
 
     /* ---- magnetic buttons ------------------------------------------------------------ */
@@ -109,20 +103,32 @@
     var lastPointer = null;
     var magnetQueued = false;
 
+    /* Resting centres are measured rarely (on load, resize, scroll end), not on
+     * every mouse move, so moving the mouse never forces the browser to re-layout. */
+    var spots = [];
+    function measureMagnets() {
+      var sx = global.pageXOffset || 0, sy = global.pageYOffset || 0;
+      spots = magnets.map(function (el) {
+        var curX = gsap.getProperty(el, 'x') || 0;
+        var curY = gsap.getProperty(el, 'y') || 0;
+        var r = el.getBoundingClientRect();
+        return { el: el, w: r.width, h: r.height, cx: r.left + sx + r.width / 2 - curX, cy: r.top + sy + r.height / 2 - curY };
+      });
+    }
+    var measureTimer;
+    function scheduleMeasure() { global.clearTimeout(measureTimer); measureTimer = global.setTimeout(measureMagnets, 180); }
+
     function magnetUpdate() {
       magnetQueued = false;
       if (!lastPointer) return;
-      magnets.forEach(function (el) {
-        if (el.disabled) return;
-        var r = el.getBoundingClientRect();
-        if (!r.width || !r.height) return;
-        var curX = gsap.getProperty(el, 'x') || 0;
-        var curY = gsap.getProperty(el, 'y') || 0;
-        var cx = r.left + r.width / 2 - curX;       // centre at rest position
-        var cy = r.top + r.height / 2 - curY;
+      var sx = global.pageXOffset || 0, sy = global.pageYOffset || 0;
+      spots.forEach(function (m) {
+        var el = m.el;
+        if (el.disabled || !m.w) return;
+        var cx = m.cx - sx, cy = m.cy - sy;
         var dx = lastPointer.x - cx;
         var dy = lastPointer.y - cy;
-        var inside = Math.abs(dx) < r.width / 2 + PAD && Math.abs(dy) < r.height / 2 + PAD;
+        var inside = Math.abs(dx) < m.w / 2 + PAD && Math.abs(dy) < m.h / 2 + PAD;
         var was = near.get(el) === true;
         if (inside) {
           near.set(el, true);
@@ -141,6 +147,12 @@
       });
     }
     if (magnets.length) {
+      measureMagnets();
+      global.addEventListener('resize', scheduleMeasure);
+      global.addEventListener('scroll', scheduleMeasure, { passive: true });
+      global.addEventListener('load', scheduleMeasure);
+      FX.whenOpen(function () { global.setTimeout(measureMagnets, 1300); global.setTimeout(measureMagnets, 3000); });
+      if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(scheduleMeasure);
       doc.addEventListener('pointermove', function (e) {
         if (e.pointerType && e.pointerType !== 'mouse') return;
         lastPointer = { x: e.clientX, y: e.clientY };
