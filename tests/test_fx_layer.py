@@ -17,7 +17,7 @@ STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 FX_FILES = [
     "css/fx.css", "css/fx-flair.css",
     "js/fx/core.js", "js/fx/icons.js", "js/fx/ambient.js",
-    "js/fx/sound.js", "js/fx/flair.js", "js/fx/motion.js", "js/fx/pointer.js",
+    "js/fx/sound.js", "js/fx/art.js", "js/fx/flair.js", "js/fx/motion.js", "js/fx/pointer.js",
     "vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/lenis.min.js",
     "vendor/fonts/inter-latin-wght-normal.woff2",
 ]
@@ -67,3 +67,14 @@ def test_layer_has_no_external_dependencies():
 
 def test_protected_routes_still_redirect(client):
     assert client.get("/home").status_code in (301, 302)
+
+
+def test_art_module_is_loaded_before_flair(client):
+    html = client.get("/login").get_data(as_text=True)
+    assert html.index("js/fx/art.js") < html.index("js/fx/flair.js")
+
+
+def test_no_live_blur_in_motion_css():
+    from pathlib import Path
+    css = (Path(__file__).resolve().parent.parent / "app/static/css/fx.css").read_text()
+    assert "backdrop-filter:" not in css

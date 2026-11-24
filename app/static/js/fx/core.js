@@ -96,6 +96,29 @@
   };
   FX.endPreview = function () { FX.setMood(FX.baseMood, { preview: false }); };
 
+  /* Performance mode. "Lite" turns off the heaviest effects (particles, cursor
+   * spotlight, glow rims, sparkle trail, grain). It is chosen automatically on
+   * phones and when the page measures itself as slow (see flair.js), and can be
+   * forced with ?fx=lite or cleared with ?fx=rich. */
+  FX.lite = false;
+  FX.setLite = function (on, persist) {
+    on = !!on;
+    if (FX.lite === on) return;
+    FX.lite = on;
+    root.classList.toggle('fx-lite', on);
+    if (persist) storageSet('moodify.perf', on ? 'lite' : 'rich');
+    FX.emit('lite', { lite: on });
+  };
+  (function () {
+    var q = global.location.search;
+    var stored = storageGet('moodify.perf');
+    if (/[?&]fx=rich\b/.test(q)) { storageSet('moodify.perf', 'rich'); stored = 'rich'; }
+    var want = /[?&]fx=lite\b/.test(q) || stored === 'lite' ||
+      (stored !== 'rich' && !FX.flags.finePointer);
+    FX.lite = want;
+    root.classList.toggle('fx-lite', want);
+  })();
+
   /* Entrance gate: page reveals wait here until the intro curtain has opened.
    * flair.js opens it; a timer guarantees it opens even if that script fails. */
   var gateOpen = false, gateQueue = [];

@@ -36,7 +36,6 @@
     if (!gsap) { clearVeil(); FX.openGate(); return; }
 
     /* ---- film grain + overlay layer for ripples / sparkles ---------------- */
-    doc.body.appendChild(el('div', 'fx-grain'));
     var layer = el('div', 'fx-fxlayer');
     layer.setAttribute('aria-hidden', 'true');
     doc.body.appendChild(layer);
@@ -241,6 +240,7 @@
       for (var k = 0; k < 16; k++) { var d = el('div', 'fx-trail'); layer.appendChild(d); trail.push(d); gsap.set(d, { opacity: 0 }); }
       doc.addEventListener('pointermove', function (e) {
         if (e.pointerType && e.pointerType !== 'mouse') return;
+        if (FX.lite) return;
         if (px !== null) acc += Math.hypot(e.clientX - px, e.clientY - py);
         px = e.clientX; py = e.clientY;
         if (acc < 46) return;
@@ -252,6 +252,40 @@
         gsap.fromTo(d, { x: px + FX.rand(-6, 6), y: py + FX.rand(-6, 6), scale: 1, opacity: 0.75 },
           { y: py + FX.rand(10, 30), scale: 0, opacity: 0, duration: 0.95, ease: 'power2.out', overwrite: true });
       }, { passive: true });
+    }
+
+
+    /* ======================================================================
+       Self-check: if the page cannot keep up, switch to lite mode by itself
+       ====================================================================== */
+    if (!reduced && !FX.lite && !/[?&]fx=rich\b/.test(global.location.search)) {
+      FX.whenOpen(function () {
+        var frames = [], last = 0, strikes = 0, running = true;
+        function sample(t) {
+          if (!running) return;
+          if (last && !doc.hidden) {
+            var d = t - last;
+            if (d < 400) frames.push(d);            // ignore tab switches / long pauses
+          }
+          last = t;
+          if (frames.length > 120) frames.shift();
+          global.requestAnimationFrame(sample);
+        }
+        global.requestAnimationFrame(sample);
+        global.setTimeout(function check() {
+          if (FX.lite) { running = false; return; }
+          if (frames.length >= 60) {
+            var slow = frames.filter(function (d) { return d > 30; }).length / frames.length;
+            strikes = slow > 0.4 ? strikes + 1 : 0;
+            if (strikes >= 3) {                     // about three seconds of struggling in a row
+              FX.setLite(true, true);
+              running = false;
+              return;
+            }
+          }
+          global.setTimeout(check, 1000);
+        }, 3500);
+      });
     }
 
     /* ======================================================================

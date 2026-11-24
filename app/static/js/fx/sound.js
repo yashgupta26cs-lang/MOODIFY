@@ -57,15 +57,18 @@
       fb.connect(delay);
       lp.connect(master);
 
+      /* seeded noise: every click sounds identical instead of randomly quiet/loud */
+      var seed = 1234567;
+      function rnd() { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 2147483648 - 1; }
       var longLen = Math.floor(ctx.sampleRate * 0.4);
       noiseLong = ctx.createBuffer(1, longLen, ctx.sampleRate);
       var ld = noiseLong.getChannelData(0);
-      for (var j = 0; j < longLen; j++) ld[j] = Math.random() * 2 - 1;
+      for (var j = 0; j < longLen; j++) ld[j] = rnd();
 
       var len = Math.floor(ctx.sampleRate * 0.05);
       noise = ctx.createBuffer(1, len, ctx.sampleRate);
       var data = noise.getChannelData(0);
-      for (var i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      for (var i = 0; i < len; i++) data[i] = rnd();
     }
 
     function ensure() {
@@ -120,9 +123,9 @@
     var VOICES = {
       click: function (v) {
         var t = ctx.currentTime;
-        burst(t, 3200, 0.9, 0.3 * v, 0.03);               // crisp key-cap transient
-        tone('triangle', 1650, 560, t, 0.002, 0.055, 0.3 * v);   // plastic "tock"
-        tone('sine', 330, 150, t, 0.003, 0.08, 0.24 * v);        // warm body
+        burst(t, 3200, 0.9, 0.26 * v, 0.03);               // crisp key-cap transient
+        tone('triangle', 1650, 560, t, 0.002, 0.055, 0.28 * v);   // plastic "tock"
+        tone('sine', 330, 150, t, 0.003, 0.08, 0.21 * v);        // warm body
       },
       swoosh: function (v) {
         var t = ctx.currentTime;
@@ -135,15 +138,16 @@
         bp.frequency.exponentialRampToValueAtTime(3400, t + 0.3);
         var g = ctx.createGain();
         g.gain.setValueAtTime(0.0001, t);
-        g.gain.exponentialRampToValueAtTime(0.2 * v, t + 0.07);
+        g.gain.exponentialRampToValueAtTime(0.5 * v, t + 0.07);
         g.gain.exponentialRampToValueAtTime(0.0001, t + 0.36);
         n.connect(bp); bp.connect(g); g.connect(master);
         n.start(t); n.stop(t + 0.4);
       },
       tick: function (v) {
         var t = ctx.currentTime;
-        tone('triangle', 2900, 2300, t, 0.002, 0.02, 0.09 * v);
-        burst(t, 5200, 1.5, 0.05 * v, 0.012);
+        tone('triangle', 2900, 2300, t, 0.002, 0.026, 0.11 * v);
+        tone('sine', 1450, 1200, t, 0.002, 0.03, 0.05 * v);
+        burst(t, 5200, 1.5, 0.05 * v, 0.014);
       },
       pop: function (v) {
         var t = ctx.currentTime;
@@ -165,7 +169,13 @@
       }
     };
 
-    var MIN_GAP = { click: 25, tick: 110, pop: 80, chime: 150, swoosh: 300 };
+    var MIN_GAP = { click: 25, tick: 90, pop: 80, chime: 150, swoosh: 300 };
+
+    function pulse() {
+      toggle.classList.remove('fx-live');
+      void toggle.offsetWidth;          // restart the CSS animation
+      toggle.classList.add('fx-live');
+    }
 
     function play(name, arg) {
       if (!enabled) return;
@@ -173,9 +183,9 @@
       if (lastPlay[name] && now - lastPlay[name] < (MIN_GAP[name] || 0)) return;
       if (!ensure()) return;
       lastPlay[name] = now;
-      try { VOICES[name](level(), arg); } catch (e) { /* audio is optional */ }
+      try { VOICES[name](level(), arg); pulse(); } catch (e) { /* audio is optional */ }
     }
-    FX.sound = { play: play };
+    FX.sound = { play: play, state: function () { return ctx ? ctx.state : (AC ? 'not-created' : 'unsupported'); }, enabled: function () { return enabled; } };
 
     /* ---- toggle button -------------------------------------------------------- */
     var toggle = doc.createElement('button');
@@ -235,6 +245,40 @@
     }
     mountToggle();
 
+    /* Wake the audio engine on the very first click / key press / touch anywhere
+     * (browsers only allow audio after a gesture), not only on buttons. */
+    var hint = null;
+    function hideHint() {
+      if (!hint) return;
+      var h = hint;
+      hint = null;
+      h.classList.remove('in');
+      global.setTimeout(function () { if (h.parentNode) h.parentNode.removeChild(h); }, 500);
+    }
+    function unlock() { if (enabled) ensure(); hideHint(); }
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (type) {
+      doc.addEventListener(type, unlock, { capture: true, passive: true, once: true });
+    });
+
+    /* One-time hint per browser session so people know sound exists and how it starts. */
+    function showHint() {
+      if (!AC) return;
+      try {
+        if (global.sessionStorage.getItem('moodify.hint') === '1') return;
+        global.sessionStorage.setItem('moodify.hint', '1');
+      } catch (e) { /* private mode: show it anyway */ }
+      hint = doc.createElement('div');
+      hint.className = 'fx-sound-hint';
+      hint.setAttribute('role', 'status');
+      hint.innerHTML = (enabled ? FX.icons.soundOn : FX.icons.soundOff) + '<span>' +
+        (enabled ? 'Sound is on. Click anywhere to hear it, or tap the speaker button to mute.'
+                 : 'Sound is muted. Tap the speaker button to turn it on.') + '</span>';
+      doc.body.appendChild(hint);
+      global.requestAnimationFrame(function () { if (hint) hint.classList.add('in'); });
+      global.setTimeout(hideHint, 7500);
+    }
+    FX.whenOpen(function () { global.setTimeout(showHint, 700); });
+
     /* ---- event wiring ------------------------------------------------------------ */
     var CLICKABLE = 'button, a[href], [role="button"], [role="tab"], input[type="submit"], summary, select';
 
@@ -255,7 +299,7 @@
     }, true);
 
     // hover tick: mouse only, only after sound is unlocked, never over music
-    var HOVER = '.fx-tilt, header nav a, .player-queue-item, .player-mode-tab, .mood-tag';
+    var HOVER = '.fx-tilt, header nav a, .fx-magnetic, .player-queue-item, .player-mode-tab, .mood-tag, .mood-tile';
     if (FX.flags.finePointer) {
       doc.addEventListener('pointerover', function (e) {
         if (!enabled || !ctx || ctx.state !== 'running' || e.pointerType !== 'mouse') return;

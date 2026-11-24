@@ -95,6 +95,8 @@ tilt cards and synthesised interface sounds (with a Sound On/Mute button in the 
 
 - Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. `flair.js` adds the intro curtain and page transitions, word-by-word headlines, click ripples, the mood colour flood, the sparkle trail, the home-page mood marquee and the gliding nav highlight. No backend code is involved.
 - Libraries (GSAP, ScrollTrigger, Lenis) and the Inter font are stored in `app/static/vendor/` (see its README for versions and licences). Nothing is loaded from a CDN by this layer.
+- `art.js` replaces the mood drop-downs on the home and setup pages with icon tiles (the real `<select>` stays in the form, so nothing changes on the server) and draws generated cover art for tracks and playlists from their titles. No images are downloaded.
+- Performance: the background is a single small canvas, no live blur is used, and the page switches itself to a lighter "lite" mode if it measures low frame rates (phones start in lite mode). Force it with `?fx=lite`, or back with `?fx=rich`.
 - It respects `prefers-reduced-motion`; the cursor, tilt and magnetic effects are disabled on touch devices.
 - To see the site without the scripts, add `?fx=off` to any URL.
 - Smoke tests: `python -m pytest tests`
