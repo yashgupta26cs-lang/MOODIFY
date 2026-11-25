@@ -39,7 +39,9 @@
 
     /* ---- Lenis smooth scroll ---------------------------------------------- */
     var lenis = null;
-    if (FX.flags.hasLenis) {
+    /* The dashboard scrolls inside its own workspace (dashboard.js sets that up). */
+    var onDashboard = !!doc.querySelector('.dash');
+    if (FX.flags.hasLenis && !onDashboard) {
       lenis = new global.Lenis({
         lerp: 0.1,
         smoothWheel: true,
@@ -73,19 +75,19 @@
     if (!hasOwnEntrance) {
       var items = FX.qsa(REVEAL).filter(function (el) { return !el.hidden; });
       if (items.length) {
-        gsap.set(items, { opacity: 0, y: 28 });
+        gsap.set(items, { opacity: 0, y: 10 });
         ST.batch(items, {
-          start: 'top 97%',
+          start: 'top 100%',
           once: true,
-          batchMax: 8,
-          interval: 0.1,
+          batchMax: 12,
+          interval: 0.03,
           onEnter: function (batch) {
             FX.whenOpen(function () { gsap.to(batch, {
               opacity: 1,
               y: 0,
-              duration: 0.9,
-              ease: 'power3.out',
-              stagger: 0.09,
+              duration: 0.2,
+              ease: 'power2.out',
+              stagger: 0.025,
               overwrite: 'auto',
               onComplete: function () {
                 batch.forEach(function (el) {
@@ -105,10 +107,10 @@
             if (el.hasAttribute('data-fx-revealed')) return;
             var r = el.getBoundingClientRect();
             if (r.top < global.innerHeight && r.bottom > 0 && parseFloat(getComputedStyle(el).opacity) < 0.05) {
-              gsap.to(el, { opacity: 1, y: 0, duration: 0.5, overwrite: 'auto' });
+              gsap.to(el, { opacity: 1, y: 0, duration: 0.2, overwrite: 'auto' });
             }
           });
-        }, 4000);
+        }, 1200);
       }
     }
 
@@ -136,7 +138,7 @@
           var panel = m.target;
           if (m.oldValue !== null && !panel.hidden) {      // "hidden" was just removed
             gsap.fromTo(panel, { opacity: 0, y: 10 }, {
-              opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', clearProps: 'opacity,transform'
+              opacity: 1, y: 0, duration: 0.18, ease: 'power2.out', clearProps: 'opacity,transform'
             });
           }
         });
@@ -155,15 +157,15 @@
         if (dots.length) {
           gsap.from(dots, {
             scale: 0, opacity: 0, transformOrigin: '50% 50%',
-            duration: 0.55, ease: 'back.out(2.2)', stagger: 0.02, overwrite: 'auto'
+            duration: 0.25, ease: 'power2.out', stagger: 0.008, overwrite: 'auto'
           });
         }
       }
       if (dist) {
         var rows = dist.querySelectorAll('.mo-dist-row');
-        if (rows.length) gsap.from(rows, { opacity: 0, y: 8, duration: 0.45, ease: 'power2.out', stagger: 0.05, clearProps: 'opacity,transform' });
+        if (rows.length) gsap.from(rows, { opacity: 0, y: 8, duration: 0.2, ease: 'power2.out', stagger: 0.02, clearProps: 'opacity,transform' });
         var fills = dist.querySelectorAll('.mo-dist-fill');
-        if (fills.length) gsap.from(fills, { scaleX: 0, transformOrigin: '0 50%', duration: 0.7, ease: 'power3.out', stagger: 0.05, clearProps: 'transform' });
+        if (fills.length) gsap.from(fills, { scaleX: 0, transformOrigin: '0 50%', duration: 0.35, ease: 'power2.out', stagger: 0.02, clearProps: 'transform' });
       }
     }
     if ((svg || dist) && global.MutationObserver) {
@@ -175,7 +177,7 @@
       });
       if (svg) chartObserver.observe(svg, { childList: true });
       if (dist) chartObserver.observe(dist, { childList: true });
-      global.setTimeout(animateMoodometer, 350);   // the first draw
+      global.setTimeout(animateMoodometer, 60);   // the first draw
     }
 
     /* Heights change once the web font and images settle. */

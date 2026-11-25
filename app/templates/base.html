@@ -10,9 +10,7 @@
     <!-- Motion & polish layer (ambient background, glass surfaces, typography) -->
     <link href="{{ url_for('static', filename='css/fx.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fx-flair.css') }}" rel="stylesheet">
-    <!-- Hides the page for an instant while the intro curtain is built (see fx-flair.css).
-         Skipped for ?fx=off and for people who prefer reduced motion. -->
-    <script>try{if(!/[?&]fx=off/.test(location.search)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){document.documentElement.classList.add('fx-veil')}}catch(e){}</script>
+    {% block head_extra %}{% endblock %}
 </head>
 <body data-mood="{{ current_user.preferred_mood or '' }}">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
@@ -68,5 +66,7 @@
     <script defer src="{{ url_for('static', filename='js/fx/flair.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/fx/motion.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/fx/pointer.js') }}"></script>
+    <!-- Home dashboard behaviour (does nothing on other pages) -->
+    <script defer src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

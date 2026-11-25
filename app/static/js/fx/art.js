@@ -131,6 +131,7 @@
     return svg;
   }
   var doc = document;
+  FX.cover = cover;      // used by the home dashboard for track and playlist covers
 
   FX.register('art', function (FX) {
 

@@ -49,7 +49,11 @@ def home():
         return score, song['id']
 
     songs = sorted(CATALOG_TRACKS, key=preference_score, reverse=True)[:6]
-    return render_template('home.html', songs=songs)
+
+    # The dashboard also shows every catalogue track and the user's own playlists
+    # in one place (additive: 'songs' is unchanged for anything that still uses it).
+    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
+    return render_template('home.html', songs=songs, all_tracks=CATALOG_TRACKS, playlists=playlists)
 
 
 @main_bp.route('/mood-checkin', methods=['POST'])

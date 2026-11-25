@@ -1,7 +1,7 @@
 /* ==========================================================================
    MOODIFY - flair layer (visual drama on top of fx.css)
-   Intro curtain, gradient headlines, glowing card rims, button shine,
-   marquee, navigation pill, ripples, grain.
+   Glowing card rims, button shine, navigation pill,
+   page fade-in, grain, cover art and mood tiles.
    Works without JavaScript (the static page simply has no extras).
    ========================================================================== */
 
@@ -11,84 +11,10 @@
   initial-value: 0deg;
 }
 
-/* ---- Veil: hides the page for the first instant while the curtain is built ---- */
-html.fx-veil::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: #0a1821;
-  /* if scripts never arrive, the page must still appear */
-  animation: fx-veil-out 0.45s ease 3.2s forwards;
-}
-@keyframes fx-veil-out { to { opacity: 0; visibility: hidden; } }
-
-/* ---- Intro / page curtain ------------------------------------------------------- */
-.fx-intro {
-  position: fixed;
-  inset: 0;
-  z-index: 10001;
-  pointer-events: auto;
-  overflow: hidden;
-}
-.fx-curtain {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 50.2%;
-  background:
-    radial-gradient(120% 140% at 50% 100%, rgba(var(--fx-accent-rgb), 0.16), transparent 60%),
-    #0a1821;
-  will-change: transform;
-}
-.fx-curtain-top { top: 0; }
-.fx-curtain-bottom {
-  bottom: 0;
-  background:
-    radial-gradient(120% 140% at 50% 0%, rgba(var(--fx-accent-rgb), 0.16), transparent 60%),
-    #0a1821;
-}
-.fx-curtain-top::after,
-.fx-curtain-bottom::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(var(--fx-accent-rgb), 0.9), transparent);
-  box-shadow: 0 0 22px 2px rgba(var(--fx-accent-rgb), 0.55);
-}
-.fx-curtain-top::after { bottom: 0; }
-.fx-curtain-bottom::after { top: 0; }
-
-.fx-intro-center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  color: var(--fx-accent);
-}
-.fx-intro-logo { width: 74px; height: 74px; filter: drop-shadow(0 0 18px rgba(var(--fx-accent-rgb), 0.6)); }
-.fx-intro-word {
-  overflow: hidden;
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 9px;
-  padding-left: 9px;
-  color: #eef3ee;
-}
-.fx-intro-bars { display: flex; align-items: center; gap: 5px; height: 26px; }
-.fx-intro-bars i {
-  display: block;
-  width: 4px;
-  height: 26px;
-  border-radius: 3px;
-  background: var(--fx-accent);
-  transform-origin: 50% 50%;
-}
+/* ---- Page enter: one quick, light fade (no curtains, no waiting) ------------------ */
+@keyframes fx-page-in { from { opacity: 0; } to { opacity: 1; } }
+body > .container { animation: fx-page-in 0.18s ease-out both; }
+@media (prefers-reduced-motion: reduce) { body > .container { animation: none; } }
 
 /* ---- Film grain (below the page content, part of the ambient layer) ----------- */
 .fx-ambient::after {
@@ -99,81 +25,6 @@ html.fx-veil::before {
   opacity: 0.06;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   background-size: 180px 180px;
-}
-
-/* ---- Overlay layer for ripples / sparks / flood / trail ------------------------- */
-.fx-fxlayer {
-  position: fixed;
-  inset: 0;
-  z-index: 9990;
-  pointer-events: none;
-  overflow: hidden;
-}
-.fx-ring,
-.fx-spark,
-.fx-trail,
-.fx-flood {
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: none;
-  will-change: transform, opacity;
-}
-.fx-ring {
-  width: 80px;
-  height: 80px;
-  margin: -40px 0 0 -40px;
-  border-radius: 50%;
-  border: 2px solid rgba(var(--fx-accent-rgb), 0.85);
-  box-shadow: 0 0 22px rgba(var(--fx-accent-rgb), 0.45), inset 0 0 18px rgba(var(--fx-accent-rgb), 0.25);
-}
-.fx-spark {
-  width: 5px;
-  height: 5px;
-  margin: -2.5px 0 0 -2.5px;
-  border-radius: 50%;
-  box-shadow: 0 0 10px currentColor;
-}
-.fx-trail {
-  border-radius: 50%;
-  box-shadow: 0 0 12px rgba(var(--fx-accent-rgb), 0.8);
-}
-.fx-flood {
-  width: 220px;
-  height: 220px;
-  margin: -110px 0 0 -110px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(var(--c, 131, 232, 199), 0.55) 0%, rgba(var(--c, 131, 232, 199), 0.18) 45%, transparent 70%);
-}
-
-/* ---- Headlines ------------------------------------------------------------------ */
-.fx-w {
-  display: inline-block;
-  vertical-align: top;
-  overflow: hidden;
-  padding: 0.1em 0.06em 0.2em;
-  margin: -0.1em -0.06em -0.2em;
-}
-.fx-wi { display: inline-block; will-change: transform; }
-
-/* Pages colour every "h1 span" with the accent; our word wrappers are spans too,
-   so plain words must take the heading colour back. */
-html body h1 .fx-w,
-html body h1 .fx-wi:not(.fx-grad) {
-  color: inherit !important;
-  font: inherit !important;
-  display: inline-block !important;
-}
-
-html body .fx-wi.fx-grad {
-  color: transparent;
-  background-image: linear-gradient(100deg,
-    var(--fx-accent) 0%, color-mix(in srgb, var(--fx-accent) 45%, #ffffff) 38%, var(--fx-accent) 54%, rgba(var(--fx-accent-rgb), 0.78) 100%);
-  background-size: 220% 100%;
-  background-position: 18% 50%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 /* ---- Glowing rim on tilt cards -------------------------------------------------- */
@@ -236,43 +87,6 @@ html body :is(.home-primary-link, .home-mood-submit, .setup-submit, .register-su
   box-shadow: 0 10px 28px -12px rgba(var(--fx-accent-rgb), 0.75);
 }
 
-/* ---- Marquee -------------------------------------------------------------------- */
-.fx-marquee {
-  position: relative;
-  overflow: clip;
-  margin: 34px calc(50% - 50vw) 8px;
-  padding: 14px 0;
-  border-block: 1px solid var(--fx-line);
-  background: linear-gradient(90deg, rgba(var(--fx-accent-rgb), 0.07), transparent 30%, transparent 70%, rgba(var(--fx-accent-rgb), 0.07));
-  user-select: none;
-}
-.fx-marquee::before,
-.fx-marquee::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 12%;
-  z-index: 2;
-  pointer-events: none;
-}
-.fx-marquee::before { left: 0; background: linear-gradient(90deg, rgba(8, 20, 28, 0.95), transparent); }
-.fx-marquee::after { right: 0; background: linear-gradient(270deg, rgba(8, 20, 28, 0.95), transparent); }
-.fx-mq-track { display: flex; width: max-content; will-change: transform; }
-.fx-mq-group { display: flex; align-items: center; flex-shrink: 0; }
-.fx-mq-word {
-  padding: 0 0.35em;
-  font-size: clamp(30px, 5.4vw, 72px);
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  color: transparent;
-  -webkit-text-stroke: 1.2px rgba(var(--fx-accent-rgb), 0.55);
-}
-.fx-mq-fill { color: rgba(var(--fx-accent-rgb), 0.9); -webkit-text-stroke: 0; }
-.fx-mq-dot { font-size: clamp(16px, 2.2vw, 28px); color: rgba(var(--fx-accent-rgb), 0.55); padding: 0 0.3em; }
-
 /* ---- Navigation pill ------------------------------------------------------------- */
 .fx-navpill {
   position: absolute;
@@ -292,13 +106,8 @@ html body nav.fx-navpill-on a:hover,
 html body nav.fx-navpill-on a.active { background: transparent !important; }
 
 /* ---- Mobile / reduced motion -------------------------------------------------------- */
-@media (max-width: 720px) {
-  .fx-marquee { margin-top: 24px; }
-}
 @media (prefers-reduced-motion: reduce) {
-  .fx-marquee { display: none; }
   .fx-ambient::after { display: none; }
-  html body .fx-wi.fx-grad { animation: none; color: var(--fx-accent); background: none; -webkit-text-fill-color: currentColor; }
   .fx-tilt:hover > .fx-rim { animation: none; }
   .fx-has-shine:hover > .fx-shine { animation: none; }
 }
@@ -308,7 +117,6 @@ html body :is(.library-card, .pl-card, .mo-stat, .mo-panel, .rf-card, .home-tast
   .home-track-card, .pd-track, .pd-add-card, .library-filters, .rf-summary) {
   background-color: rgba(8, 21, 29, 0.68) !important;
 }
-.fx-marquee { margin-bottom: 30px; }
 
 
 /* ---- Sound feedback --------------------------------------------------------------- */
@@ -360,11 +168,8 @@ html body :is(.library-card, .pl-card, .mo-stat, .mo-panel, .rf-card, .home-tast
 /* ---- Lite mode: simpler effects for phones and slower computers ---------------- */
 html.fx-lite .fx-ambient::after,
 html.fx-lite .fx-particles,
-html.fx-lite .fx-trail,
 html.fx-lite .fx-rim,
 html.fx-lite .fx-cursor { display: none !important; }
-html.fx-lite .fx-ring,
-html.fx-lite .fx-spark { display: none; }
 html.fx-lite .fx-tilt:hover > .fx-rim { animation: none; }
 html.fx-lite body .fx-tilt:hover { box-shadow: var(--fx-lift); }
 

@@ -1,1035 +1,303 @@
 {% extends 'base.html' %}
 {% block title %}MOODIFY | Your sound, your mood{% endblock %}
+{% block head_extra %}<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">{% endblock %}
 {% block content %}
 
-<style>
-:root {
-    --home-night: #0a1821;
-    --home-night-soft: #102630;
-    --home-mint: #83e8c7;
-    --home-cyan: #83cbd8;
-    --home-paper: #f0eee7;
-    --home-ink: #17252b;
-    --home-muted: #a5b5b7;
-}
-
-body:has(.home-page) {
-    margin: 0;
-    background: var(--home-night);
-    color: #f7f7f1;
-    overflow-x: hidden;
-    font-family: "Segoe UI", Arial, sans-serif;
-}
-
-body:has(.home-page) > nav.navbar {
-    display: none !important;
-}
-
-body:has(.home-page) > .container {
-    max-width: none;
-    width: 100%;
-    padding: 0;
-    margin: 0;
-}
-
-body:has(.home-page) > .container > .alert {
-    width: min(1180px, 92%);
-    margin: 18px auto;
-    border-radius: 12px;
-}
-
-.home-page {
-    min-height: 100vh;
-    min-height: 100svh;
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    background:
-        radial-gradient(ellipse at 8% 22%, #234d4c50, transparent 38%),
-        radial-gradient(ellipse at 92% 70%, #29465b55, transparent 38%),
-        var(--home-night);
-}
-
-.home-page::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    opacity: .1;
-    background-image:
-        linear-gradient(#b3e8dc10 1px, transparent 1px),
-        linear-gradient(90deg, #b3e8dc10 1px, transparent 1px);
-    background-size: 64px 64px;
-}
-
-.home-topbar {
-    min-height: 76px;
-    padding: 12px max(4%, calc((100% - 1180px) / 2));
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    border-bottom: 1px solid #ffffff12;
-    background: #07141bc9;
-    backdrop-filter: blur(16px);
-}
-
-.home-brand {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    color: #fff;
-    text-decoration: none;
-    font-size: 20px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    white-space: nowrap;
-}
-
-.home-brand:hover { color: #fff; }
-
-.home-brand-mark {
-    width: 39px;
-    height: 39px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: linear-gradient(145deg, #21483f, #102b30);
-    border: 1px solid #83e8c788;
-    box-shadow: 0 0 20px #83e8c722;
-}
-
-.home-brand-mark svg { width: 27px; }
-
-.home-nav {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-}
-
-.home-nav a {
-    padding: 10px 13px;
-    border-radius: 9px;
-    color: #a9b9bb;
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 700;
-    transition: .2s ease;
-}
-
-.home-nav a:hover,
-.home-nav a.active {
-    color: var(--home-mint);
-    background: #83e8c711;
-}
-
-.home-account {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #f7f7f1;
-    text-decoration: none;
-    white-space: nowrap;
-}
-
-.home-avatar {
-    width: 36px;
-    height: 36px;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    color: var(--home-night);
-    background: var(--home-mint);
-    font-size: 13px;
-    font-weight: 900;
-}
-
-.home-account-copy {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.home-account-copy small {
-    color: #91a6a8;
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: .7px;
-}
-
-.home-logout {
-    color: #a9b9bb;
-    font-size: 11px;
-    text-decoration: none;
-    margin-left: 5px;
-}
-
-.home-logout:hover { color: var(--home-mint); }
-
-.home-main {
-    width: min(1180px, 92%);
-    margin: 0 auto;
-    padding: 42px 0 54px;
-    animation: homeEnter .65s ease both;
-}
-
-@keyframes homeEnter {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.home-welcome-row {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 25px;
-    margin-bottom: 28px;
-}
-
-.home-eyebrow {
-    color: var(--home-mint);
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 2.5px;
-    margin-bottom: 12px;
-}
-
-.home-welcome-row h1 {
-    margin: 0;
-    color: #f7f7f1;
-    font-size: clamp(30px, 4vw, 43px);
-    line-height: 1.08;
-    font-weight: 850;
-    letter-spacing: -1.6px;
-}
-
-.home-welcome-row h1 span { color: var(--home-mint); }
-
-.home-welcome-row p {
-    margin: 12px 0 0;
-    color: #a5b5b7;
-    font-size: 13px;
-    line-height: 1.7;
-}
-
-.home-search {
-    width: min(350px, 100%);
-    display: flex;
-    align-items: center;
-    padding: 5px;
-    border: 1px solid #ffffff1c;
-    border-radius: 13px;
-    background: #ffffff08;
-}
-
-.home-search input {
-    width: 100%;
-    min-width: 0;
-    padding: 11px 12px;
-    border: 0;
-    outline: 0;
-    color: #fff;
-    background: transparent;
-    font-size: 12px;
-}
-
-.home-search input::placeholder { color: #819699; }
-
-.home-search button {
-    min-width: 42px;
-    height: 39px;
-    border: 0;
-    border-radius: 9px;
-    color: var(--home-night);
-    background: var(--home-mint);
-    font-weight: 900;
-    cursor: pointer;
-}
-
-.home-search button:hover { background: #a6f2d9; }
-
-.home-hero {
-    min-height: 278px;
-    position: relative;
-    display: grid;
-    grid-template-columns: 1.2fr .8fr;
-    align-items: center;
-    gap: 20px;
-    padding: 34px 42px;
-    margin-bottom: 24px;
-    overflow: hidden;
-    border: 1px solid #83e8c72e;
-    border-radius: 25px;
-    background:
-        radial-gradient(circle at 78% 42%, #83e8c71a, transparent 33%),
-        linear-gradient(112deg, #183a3c, #102630 60%, #142b36);
-    box-shadow: 0 24px 65px #0003;
-}
-
-.home-hero::after {
-    content: "";
-    position: absolute;
-    width: 330px;
-    height: 330px;
-    right: 5%;
-    top: -150px;
-    border: 1px solid #83e8c729;
-    border-radius: 50%;
-    pointer-events: none;
-}
-
-.home-hero-copy { position: relative; z-index: 2; }
-
-.home-hero-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 12px;
-    border: 1px solid #83e8c745;
-    border-radius: 30px;
-    color: var(--home-mint);
-    background: #83e8c70d;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 1.6px;
-}
-
-.home-hero-label::before {
-    content: "";
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--home-mint);
-    box-shadow: 0 0 12px var(--home-mint);
-}
-
-.home-hero h2 {
-    max-width: 540px;
-    margin: 18px 0 11px;
-    color: #f7f7f1;
-    font-size: clamp(27px, 3.3vw, 38px);
-    line-height: 1.1;
-    letter-spacing: -1.2px;
-    font-weight: 850;
-}
-
-.home-hero h2 span { color: var(--home-mint); }
-
-.home-hero p {
-    max-width: 460px;
-    color: #b4c6c5;
-    font-size: 12px;
-    line-height: 1.8;
-    margin: 0;
-}
-
-.home-hero-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 22px;
-}
-
-.home-primary-link,
-.home-secondary-link {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 43px;
-    padding: 0 17px;
-    border-radius: 10px;
-    text-decoration: none;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: .7px;
-    transition: .22s ease;
-}
-
-.home-primary-link {
-    color: var(--home-night);
-    background: var(--home-mint);
-}
-
-.home-primary-link:hover {
-    color: var(--home-night);
-    background: #a7f3d9;
-    transform: translateY(-2px);
-}
-
-.home-secondary-link {
-    color: #e6f2ef;
-    border: 1px solid #ffffff2c;
-    background: #ffffff08;
-}
-
-.home-secondary-link:hover {
-    color: var(--home-mint);
-    border-color: #83e8c766;
-}
-
-.home-hero-art {
-    min-height: 208px;
-    position: relative;
-    display: grid;
-    place-items: center;
-}
-
-.home-disc {
-    width: 176px;
-    height: 176px;
-    position: relative;
-    border-radius: 50%;
-    border: 1px solid #83e8c77a;
-    background:
-        repeating-radial-gradient(circle, transparent 0 10px, #83e8c71b 11px 12px),
-        conic-gradient(
-            from 0deg,
-            #ffffff10 0deg,
-            transparent 28deg,
-            #83e8c71c 65deg,
-            transparent 105deg,
-            #ffffff0a 150deg,
-            transparent 205deg,
-            #83e8c71b 250deg,
-            transparent 315deg,
-            #ffffff10 360deg
-        ),
-        radial-gradient(circle at 40% 35%, #244e4e, #0b1a22 68%);
-    box-shadow: 0 0 55px #83e8c71a, inset 0 0 30px #0008;
-    animation: discSpin 10s linear infinite;
-    will-change: transform;
-}
-
-.home-disc::before {
-    content: "";
-    position: absolute;
-    inset: 40%;
-    border-radius: 50%;
-    border: 1px solid #83e8c7a1;
-    background: var(--home-mint);
-    box-shadow: 0 0 25px #83e8c755;
-}
-
-.home-disc::after {
-    content: "M";
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    color: #102630;
-    font-size: 21px;
-    font-weight: 950;
-    z-index: 1;
-}
-
-@keyframes discSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-.home-sound-bars {
-    position: absolute;
-    right: 5%;
-    bottom: 8%;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    height: 40px;
-}
-
-.home-sound-bars i {
-    display: block;
-    width: 4px;
-    border-radius: 4px;
-    background: var(--home-mint);
-    animation: homeBar 1.1s ease-in-out infinite alternate;
-}
-
-.home-sound-bars i:nth-child(1) { height: 14px; animation-delay: -.2s; }
-.home-sound-bars i:nth-child(2) { height: 30px; animation-delay: -.7s; }
-.home-sound-bars i:nth-child(3) { height: 21px; animation-delay: -.4s; }
-.home-sound-bars i:nth-child(4) { height: 37px; animation-delay: -.9s; }
-.home-sound-bars i:nth-child(5) { height: 17px; animation-delay: -.3s; }
-.home-sound-bars i:nth-child(6) { height: 27px; animation-delay: -.6s; }
-
-@keyframes homeBar {
-    to { transform: scaleY(.45); opacity: .55; }
-}
-
-.home-section-heading {
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 15px;
-    margin: 34px 0 15px;
-}
-
-.home-section-heading h2 {
-    margin: 0;
-    color: #f7f7f1;
-    font-size: 19px;
-    font-weight: 850;
-    letter-spacing: -.4px;
-}
-
-.home-section-heading p {
-    margin: 6px 0 0;
-    color: #8fa4a7;
-    font-size: 11px;
-}
-
-.home-text-link {
-    color: var(--home-mint);
-    text-decoration: none;
-    font-size: 10px;
-    font-weight: 850;
-    white-space: nowrap;
-}
-
-.home-text-link:hover { color: #b0f5dd; }
-
-.home-taste-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 13px;
-}
-
-.home-taste-card {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 13px;
-    padding: 17px;
-    border: 1px solid #ffffff15;
-    border-radius: 15px;
-    background: #ffffff08;
-    text-decoration: none;
-    transition: .22s ease;
-}
-
-.home-taste-card:hover {
-    transform: translateY(-3px);
-    border-color: #83e8c75c;
-    background: #83e8c70c;
-}
-
-.home-taste-icon {
-    flex: 0 0 39px;
-    width: 39px;
-    height: 39px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    color: var(--home-mint);
-    background: #83e8c716;
-    font-size: 17px;
-}
-
-.home-taste-copy { min-width: 0; }
-
-.home-taste-copy small {
-    display: block;
-    margin-bottom: 4px;
-    color: #8da4a6;
-    font-size: 8px;
-    font-weight: 900;
-    letter-spacing: 1.4px;
-}
-
-.home-taste-copy strong {
-    display: block;
-    overflow: hidden;
-    color: #f2f5ef;
-    font-size: 12px;
-    font-weight: 800;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.home-dashboard {
-    display: grid;
-    grid-template-columns: minmax(0, 1.7fr) minmax(260px, .8fr);
-    align-items: start;
-    gap: 18px;
-    margin-top: 8px;
-}
-
-.home-track-panel,
-.home-mood-panel {
-    border: 1px solid #ffffff16;
-    border-radius: 18px;
-    background: #ffffff08;
-}
-
-.home-track-panel { padding: 20px; }
-
-.home-track-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-}
-
-.home-track-card {
-    min-width: 0;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid #ffffff10;
-    border-radius: 13px;
-    background: #0b1b23a8;
-    transition: .2s ease;
-}
-
-.home-track-card:hover {
-    border-color: #83e8c74a;
-    transform: translateY(-2px);
-}
-
-.home-track-art {
-    flex: 0 0 62px;
-    width: 62px;
-    height: 62px;
-    position: relative;
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    border-radius: 11px;
-    color: #eff8ef;
-    background: linear-gradient(145deg, #285d58, #172e39);
-}
-
-.home-track-art::before,
-.home-track-art::after {
-    content: "";
-    position: absolute;
-    width: 75px;
-    height: 75px;
-    border: 1px solid #ffffff35;
-    border-radius: 50%;
-}
-
-.home-track-art::before { transform: translate(22px, -22px); }
-.home-track-art::after { transform: translate(-22px, 22px); }
-
-.home-track-art span {
-    position: relative;
-    z-index: 1;
-    font-size: 24px;
-    font-weight: 900;
-}
-
-.home-track-art.art-1 { background: linear-gradient(145deg, #38616e, #1a2d3a); }
-.home-track-art.art-2 { background: linear-gradient(145deg, #4d5a46, #1d3330); }
-.home-track-art.art-3 { background: linear-gradient(145deg, #5a456b, #24283a); }
-
-.home-track-info { min-width: 0; flex: 1; }
-
-.home-track-info h3 {
-    overflow: hidden;
-    margin: 0 0 4px;
-    color: #f5f6ef;
-    font-size: 12px;
-    font-weight: 850;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.home-track-info p {
-    overflow: hidden;
-    margin: 0 0 8px;
-    color: #91a6a8;
-    font-size: 10px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.home-track-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.home-track-tags span {
-    padding: 4px 7px;
-    border-radius: 20px;
-    color: #a8dcca;
-    background: #83e8c711;
-    font-size: 8px;
-    font-weight: 800;
-}
-
-.home-track-open {
-    display: inline-block;
-    margin-top: 9px;
-    color: var(--home-mint);
-    font-size: 9px;
-    font-weight: 900;
-    text-decoration: none;
-}
-
-.home-track-open:hover { color: #fff; }
-
-.home-empty {
-    grid-column: 1 / -1;
-    padding: 27px 15px;
-    border: 1px dashed #83e8c74a;
-    border-radius: 13px;
-    color: #a8bbba;
-    text-align: center;
-    font-size: 12px;
-    line-height: 1.7;
-}
-
-.home-empty strong {
-    display: block;
-    margin-bottom: 5px;
-    color: #edf5ef;
-    font-size: 14px;
-}
-
-.home-mood-panel {
-    padding: 21px;
-    background:
-        radial-gradient(circle at 100% 0%, #83e8c71b, transparent 42%),
-        #102630;
-}
-
-.home-mood-number {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    margin-bottom: 15px;
-    border-radius: 12px;
-    color: var(--home-night);
-    background: var(--home-mint);
-    font-size: 17px;
-}
-
-.home-mood-panel h3 {
-    margin: 0 0 7px;
-    color: #f5f6ef;
-    font-size: 17px;
-    font-weight: 850;
-}
-
-.home-mood-panel p {
-    margin: 0 0 17px;
-    color: #a4b7b6;
-    font-size: 11px;
-    line-height: 1.7;
-}
-
-.home-mood-panel label {
-    display: block;
-    margin-bottom: 7px;
-    color: #dce8e3;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 1px;
-}
-
-.home-mood-select {
-    width: 100%;
-    height: 43px;
-    padding: 0 11px;
-    border: 1px solid #ffffff22;
-    border-radius: 9px;
-    outline: none;
-    color: #f4f6f1;
-    background: #0a1821;
-    font-size: 11px;
-}
-
-.home-mood-select:focus {
-    border-color: var(--home-mint);
-    box-shadow: 0 0 0 3px #83e8c71c;
-}
-
-.home-mood-select option { color: #17252b; }
-
-.home-mood-submit {
-    width: 100%;
-    height: 43px;
-    margin-top: 11px;
-    border: 0;
-    border-radius: 9px;
-    color: var(--home-night);
-    background: var(--home-mint);
-    font-size: 10px;
-    font-weight: 950;
-    letter-spacing: .8px;
-    cursor: pointer;
-    transition: .2s ease;
-}
-
-.home-mood-submit:hover {
-    background: #a8f1d9;
-    transform: translateY(-2px);
-}
-
-.home-bottom-note {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 15px;
-    margin-top: 22px;
-    padding: 17px 19px;
-    border: 1px solid #ffffff12;
-    border-radius: 13px;
-    color: #8fa5a6;
-    background: #ffffff05;
-    font-size: 10px;
-}
-
-.home-bottom-note strong { color: #dceae4; }
-
-.home-bottom-note a {
-    color: var(--home-mint);
-    text-decoration: none;
-    font-weight: 850;
-    white-space: nowrap;
-}
-
-.home-footer {
-    padding: 25px 10px 4px;
-    color: #637d80;
-    text-align: center;
-    font-size: 8px;
-    font-weight: 800;
-    letter-spacing: 2.3px;
-}
-
-/* TABLET */
-@media (max-width: 900px) {
-    .home-topbar { flex-wrap: wrap; gap: 12px; }
-    .home-nav { order: 3; width: 100%; justify-content: flex-start; overflow-x: auto; }
-    .home-hero { padding: 29px; }
-    .home-dashboard { grid-template-columns: 1fr; }
-}
-
-/* MOBILE */
-@media (max-width: 620px) {
-    .home-topbar { padding: 11px 4%; }
-    .home-brand { font-size: 17px; }
-    .home-account-copy, .home-logout { display: none; }
-    .home-nav { gap: 1px; }
-    .home-nav a { padding: 9px 10px; font-size: 10px; }
-    .home-main { width: 92%; padding-top: 27px; }
-    .home-welcome-row { display: block; }
-    .home-welcome-row h1 { font-size: 34px; }
-    .home-search { margin-top: 19px; width: 100%; }
-    .home-hero { grid-template-columns: 1fr; padding: 25px 22px 15px; }
-    .home-hero-art { min-height: 145px; }
-    .home-disc { width: 125px; height: 125px; }
-    .home-section-heading { align-items: center; }
-    .home-taste-grid { grid-template-columns: 1fr; gap: 9px; }
-    .home-track-panel { padding: 13px; }
-    .home-track-grid { grid-template-columns: 1fr; }
-    .home-bottom-note { align-items: flex-start; flex-direction: column; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .home-page *, .home-page::before {
-        animation: none !important;
-        transition: none !important;
-    }
-}
-</style>
-
-<div class="home-page">
-
-    <header class="home-topbar">
-        <a href="{{ url_for('main.home') }}" class="home-brand">
-            <span class="home-brand-mark">
-                <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
-                    <path d="M4 29V11L12 22L20 7L28 22L36 11V29"
-                          stroke="#83E8C7" stroke-width="3"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                    <circle cx="20" cy="7" r="2" fill="white"/>
-                </svg>
-            </span>
-            MOODIFY
-        </a>
-
-        <nav class="home-nav" aria-label="Main navigation">
-            <a href="{{ url_for('main.home') }}" class="active">Discover</a>
-            <a href="{{ url_for('main.music') }}">Music</a>
-            <a href="{{ url_for('main.playlist') }}">Playlists</a>
-            <a href="{{ url_for('main.mood_history') }}">Mood journal</a>
+{# Mood cards: the ten check-in moods first, then any extra mood used by the catalogue. #}
+{% set checkin_moods = ['Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic', 'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous'] %}
+{% set ns = namespace(extra=[]) %}
+{% for t in all_tracks %}
+  {% if t.mood and t.mood not in checkin_moods and t.mood not in ns.extra %}{% set ns.extra = ns.extra + [t.mood] %}{% endif %}
+{% endfor %}
+{% set mood_cards = checkin_moods + ns.extra %}
+{% set picked_ids = songs | map(attribute='id') | list %}
+
+{% macro ico(name) -%}
+{%- if name == 'home' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7v9.4a.8.8 0 0 1-.8.8H14.5v-6h-5v6H4.300a.8.8 0 0 1-.8-.8z"/></svg>
+{%- elif name == 'moods' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.500"/><path d="M8.600 14.200c.9 1.300 2.100 2 3.400 2s2.500-.7 3.400-2"/><path d="M9 9.800h.01M15 9.800h.01"/></svg>
+{%- elif name == 'playlists' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.500h11M4 11.500h11M4 16.500h6"/><path d="M18.500 14.500v-8l2.500 1.200"/><circle cx="16.500" cy="16.800" r="2.200"/></svg>
+{%- elif name == 'library' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.500v15M10 4.500v15"/><path d="m14.500 5.300 4.600-1 2.400 14.600-4.600 1z"/></svg>
+{%- elif name == 'journal' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.500 9 12l3.500 3.500L20 6.500"/><path d="M15 6.500h5v5"/></svg>
+{%- elif name == 'recs' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.500 2.400 5.100 5.600.7-4.100 3.900 1 5.500L12 15.900 7.100 18.700l1-5.500L4 9.300l5.600-.7z"/></svg>
+{%- elif name == 'user' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.500" r="3.800"/><path d="M4.500 20c.8-3.700 3.600-5.600 7.500-5.600s6.700 1.900 7.500 5.600"/></svg>
+{%- elif name == 'search' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4.500 4.500"/></svg>
+{%- elif name == 'plus' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+{%- elif name == 'play' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M8 5.200v13.600a.8.8 0 0 0 1.200.7l10.800-6.800a.8.8 0 0 0 0-1.400L9.200 4.500A.8.8 0 0 0 8 5.200z"/></svg>
+{%- elif name == 'pause' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><rect x="6.500" y="5" width="3.800" height="14" rx="1.200"/><rect x="13.700" y="5" width="3.800" height="14" rx="1.200"/></svg>
+{%- elif name == 'prev' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M6 5h2v14H6z"/><path d="M19 5.800v12.400a.6.6 0 0 1-.9.5L9.800 12.500a.6.6 0 0 1 0-1z"/></svg>
+{%- elif name == 'next' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M16 5h2v14h-2z"/><path d="M5 5.800v12.400a.6.6 0 0 0 .9.5l8.300-6.200a.6.6 0 0 0 0-1L5.900 5.300a.6.6 0 0 0-.9.500z"/></svg>
+{%- elif name == 'volume' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18 6.500a7.700 7.700 0 0 1 0 11"/></svg>
+{%- elif name == 'expand' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.500h5.500V10M10 19.500H4.500V14M19.500 4.500 13 11M4.500 19.500 11 13"/></svg>
+{%- elif name == 'check' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.500L19 7.500"/></svg>
+{%- elif name == 'close' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+{%- endif -%}
+{%- endmacro %}
+
+<div class="dash" id="dash" data-current-mood="{{ current_user.preferred_mood or '' }}">
+
+  {# ============================ LEFT SIDEBAR ============================ #}
+  <aside class="dash-side" aria-label="Main">
+    <div class="dash-panel dash-nav-panel">
+      <a href="{{ url_for('main.home') }}" class="dash-brand" aria-label="MOODIFY home">
+        <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="dash-brand-word">MOODIFY</span>
+      </a>
+      <nav class="dash-nav" aria-label="Sections">
+        <a href="#top" class="active" data-jump="top">{{ ico('home') }}<span>Home</span></a>
+        <a href="#moods" data-jump="moods">{{ ico('moods') }}<span>Moods</span></a>
+        <a href="#playlists" data-jump="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
+        <a href="{{ url_for('main.music') }}">{{ ico('library') }}<span>Library</span></a>
+        <a href="{{ url_for('main.moodometer') }}">{{ ico('journal') }}<span>Mood journal</span></a>
+        <a href="{{ url_for('main.recommendations') }}">{{ ico('recs') }}<span>Recommendations</span></a>
+      </nav>
+    </div>
+
+    <div class="dash-panel dash-lists-panel">
+      <div class="dash-panel-head">
+        <span>Your playlists</span>
+        <button type="button" class="dash-icon-btn" id="newPlaylistSide" aria-label="Create a playlist" title="Create a playlist">{{ ico('plus') }}</button>
+      </div>
+      <div class="dash-side-lists" id="sideLists">
+        {% for pl in playlists %}
+        <button type="button" class="dash-side-item" data-playlist="{{ pl.id }}">
+          <span class="dash-side-cover" data-cover="{{ pl.name }}"></span>
+          <span class="dash-side-copy"><strong>{{ pl.name }}</strong><small>{{ pl.catalog_tracks|length }} track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</small></span>
+        </button>
+        {% else %}
+        <p class="dash-side-empty">No playlists yet. Make one and fill it with tracks you love.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  {# ============================ TOP BAR + WORKSPACE ============================ #}
+  <div class="dash-main">
+    <header class="dash-top">
+      <form class="dash-search" id="dashSearch" role="search" method="GET" action="{{ url_for('main.music') }}">
+        <span class="dash-search-ico">{{ ico('search') }}</span>
+        <input type="search" name="q" id="dashQuery" placeholder="Search songs, artists, genres or moods" autocomplete="off" aria-label="Search songs, artists, genres or moods">
+        <button type="button" class="dash-search-clear" id="dashQueryClear" aria-label="Clear search" hidden>{{ ico('close') }}</button>
+      </form>
+
+      <div class="dash-pills" id="dashPills" role="toolbar" aria-label="Quick mood filter">
+        <button type="button" class="dash-pill on" data-mood="">All</button>
+        {% for m in mood_cards %}<button type="button" class="dash-pill" data-mood="{{ m }}">{{ m }}</button>{% endfor %}
+      </div>
+
+      <div class="dash-account">
+        <details class="dash-menu">
+          <summary aria-label="Account menu"><span class="dash-avatar">{{ (current_user.username or 'M')[0]|upper }}</span></summary>
+          <div class="dash-menu-pop">
+            <div class="dash-menu-who"><strong>{{ current_user.username }}</strong><small>Your listening space</small></div>
             <a href="{{ url_for('main.profile') }}">Profile</a>
-        </nav>
-
-        <div class="home-account">
-            <span class="home-avatar">{{ (current_user.username or 'M')[0]|upper }}</span>
-            <span class="home-account-copy">
-                {{ current_user.username }}
-                <small>YOUR LISTENING SPACE</small>
-            </span>
-            <a href="{{ url_for('auth.logout') }}" class="home-logout">Log out</a>
-        </div>
+            <a href="{{ url_for('main.setup') }}">Edit preferences</a>
+            <a href="{{ url_for('auth.logout') }}">Log out</a>
+          </div>
+        </details>
+      </div>
     </header>
 
-    <main class="home-main">
+    <main class="dash-work" id="dashWork" tabindex="-1">
+      <div class="dash-inner" id="dashInner">
+        <span id="top"></span>
 
-        <section class="home-welcome-row">
+        {# ---------- Welcome ---------- #}
+        <section class="dash-welcome">
+          <div>
+            <h1>Hey, {{ current_user.username }}</h1>
+            <p>
+              {% if current_user.preferred_mood %}Your current mood is <strong id="curMoodText">{{ current_user.preferred_mood }}</strong>. Pick a mood below to tune your music.
+              {% else %}Pick a mood below and MOODIFY will tune your music to it.{% endif %}
+            </p>
+          </div>
+          <div class="dash-taste" aria-label="Your taste">
+            <a href="{{ url_for('main.music', language=current_user.preferred_language) }}"><small>Language</small><strong>{{ current_user.preferred_language or 'Choose one' }}</strong></a>
+            <a href="{{ url_for('main.music', singer=current_user.favorite_singer) }}"><small>Favourite artist</small><strong>{{ current_user.favorite_singer or 'Add one' }}</strong></a>
+          </div>
+        </section>
+
+        {# ---------- Mood selector ---------- #}
+        <section class="dash-section" id="moods" aria-labelledby="moodsTitle">
+          <div class="dash-head">
             <div>
-                <div class="home-eyebrow">YOUR PERSONAL SOUNDTRACK</div>
-                <h1>Hey, {{ current_user.username }}.<br>
-                    <span>Let's find your rhythm.</span>
-                </h1>
-                <p>Your music space is ready. Start with the sounds and moods you love.</p>
+              <h2 id="moodsTitle">How are you feeling?</h2>
+              <p>Tap a mood to filter the music instantly. Save it to update your mood journal.</p>
             </div>
+          </div>
+          <div class="dash-moods" id="moodGrid" role="radiogroup" aria-labelledby="moodsTitle">
+            {% for m in mood_cards %}
+            <button type="button" class="dash-mood" role="radio" aria-checked="false" data-mood="{{ m }}">
+              <span class="dash-mood-ico" data-glyph="{{ m }}"></span>
+              <span class="dash-mood-name">{{ m }}</span>
+              <span class="dash-mood-tag" data-current-tag hidden>Current</span>
+            </button>
+            {% endfor %}
+          </div>
 
-            <form class="home-search" method="GET" action="{{ url_for('main.music') }}">
-                <input type="search" name="q" placeholder="Search songs, artists or genres..."
-                       aria-label="Search songs, artists or genres">
-                <button type="submit" aria-label="Search">⌕</button>
+          <form class="dash-save" id="moodForm" method="POST" action="{{ url_for('main.mood_checkin') }}" hidden>
+            <input type="hidden" name="mood" id="moodInput" value="">
+            <span class="dash-save-text">Set <strong id="saveMoodName"></strong> as your current mood?</span>
+            <button type="submit" class="dash-btn primary" id="saveMoodBtn">{{ ico('check') }}<span>Save mood check-in</span></button>
+          </form>
+          <noscript>
+            <form class="dash-save" method="POST" action="{{ url_for('main.mood_checkin') }}" style="display:flex">
+              <select name="mood" aria-label="Mood">{% for m in checkin_moods %}<option value="{{ m }}" {% if current_user.preferred_mood == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+              <button type="submit" class="dash-btn primary"><span>Save mood check-in</span></button>
             </form>
+          </noscript>
         </section>
 
-        <section class="home-hero">
-            <div class="home-hero-copy">
-                <div class="home-hero-label">MADE AROUND YOU</div>
-                <h2>Every mood has<br><span>its own melody.</span></h2>
-                <p>
-                    Your current vibe is <strong>{{ current_user.preferred_mood or 'still a mystery' }}</strong>.
-                    Explore tracks shaped by your language, favourite artist and mood.
-                </p>
-                <div class="home-hero-actions">
-                    <a class="home-primary-link"
-                       href="{{ url_for('main.music', mood=current_user.preferred_mood) }}">
-                        EXPLORE YOUR MIX &nbsp; →
-                    </a>
-                    <a class="home-secondary-link" href="{{ url_for('main.setup') }}">
-                        EDIT PREFERENCES
-                    </a>
-                </div>
-            </div>
-
-            <div class="home-hero-art" aria-hidden="true">
-                <div class="home-disc"></div>
-                <div class="home-sound-bars">
-                    <i></i><i></i><i></i><i></i><i></i><i></i>
-                </div>
-            </div>
-        </section>
-
-        <section>
-            <div class="home-section-heading">
-                <div>
-                    <h2>Your listening DNA</h2>
-                    <p>A little snapshot of what makes your music yours.</p>
-                </div>
-                <a href="{{ url_for('main.setup') }}" class="home-text-link">EDIT DETAILS ↗</a>
-            </div>
-
-            <div class="home-taste-grid">
-                <a class="home-taste-card"
-                   href="{{ url_for('main.music', language=current_user.preferred_language) }}">
-                    <span class="home-taste-icon">文</span>
-                    <span class="home-taste-copy">
-                        <small>YOUR LANGUAGE</small>
-                        <strong>{{ current_user.preferred_language or 'Choose a language' }}</strong>
-                    </span>
-                </a>
-
-                <a class="home-taste-card"
-                   href="{{ url_for('main.music', singer=current_user.favorite_singer) }}">
-                    <span class="home-taste-icon">♫</span>
-                    <span class="home-taste-copy">
-                        <small>YOUR FAVOURITE ARTIST</small>
-                        <strong>{{ current_user.favorite_singer or 'Add your favourite artist' }}</strong>
-                    </span>
-                </a>
-
-                <a class="home-taste-card"
-                   href="{{ url_for('main.music', mood=current_user.preferred_mood) }}">
-                    <span class="home-taste-icon">✦</span>
-                    <span class="home-taste-copy">
-                        <small>YOUR MOOD</small>
-                        <strong>{{ current_user.preferred_mood or 'Choose your mood' }}</strong>
-                    </span>
-                </a>
-            </div>
-        </section>
-
-        <div class="home-section-heading">
+        {# ---------- Tracks ---------- #}
+        <section class="dash-section" id="tracks" aria-labelledby="tracksTitle">
+          <div class="dash-head">
             <div>
-                <h2>Picked for your vibe</h2>
-                <p>Tracks from your library, ranked around your saved preferences.</p>
+              <h2 id="tracksTitle">Picked for your vibe</h2>
+              <p id="tracksSub">Ranked around your language, favourite artist and mood.</p>
             </div>
-            <a href="{{ url_for('main.music') }}" class="home-text-link">BROWSE LIBRARY ↗</a>
-        </div>
-
-        <section class="home-dashboard">
-            <div class="home-track-panel">
-                <div class="home-track-grid">
-                    {% for song in songs %}
-                    <article class="home-track-card">
-                        <div class="home-track-art art-{{ loop.index0 % 4 }}">
-                            <span>{{ (song.title or '♫')[0]|upper }}</span>
-                        </div>
-                        <div class="home-track-info">
-                            <h3>{{ song.title }}</h3>
-                            <p>{{ song.artist }}</p>
-                            <div class="home-track-tags">
-                                <span>{{ song.language or 'Mixed' }}</span>
-                                <span>{{ song.mood or song.genre or 'For you' }}</span>
-                            </div>
-                            <a href="{{ url_for('main.play', music_id=song.id) }}"
-                               class="home-track-open">OPEN TRACK →</a>
-                        </div>
-                    </article>
-                    {% else %}
-                    <div class="home-empty">
-                        <strong>Your music shelf is waiting.</strong>
-                        Add tracks to your MOODIFY library and your personalised picks will appear here.
-                        <br>
-                        <a href="{{ url_for('main.music') }}" class="home-text-link">OPEN MUSIC LIBRARY →</a>
-                    </div>
-                    {% endfor %}
-                </div>
+            <div class="dash-head-actions">
+              <button type="button" class="dash-chip" id="clearFilters" hidden>{{ ico('close') }}<span>Clear filter</span></button>
+              <a class="dash-link" id="allResults" href="{{ url_for('main.music') }}" hidden>See all results in Library &rarr;</a>
+              <a class="dash-link" id="libraryLink" href="{{ url_for('main.music') }}">Open Library &rarr;</a>
             </div>
-
-            <aside class="home-mood-panel">
-                <div class="home-mood-number">✦</div>
-                <h3>How are you feeling now?</h3>
-                <p>Check in with your mood. MOODIFY will save it to your mood journal and refresh your mix.</p>
-
-                <form method="POST" action="{{ url_for('main.mood_checkin') }}">
-                    <label for="homeMood">TODAY'S MOOD</label>
-                    <select id="homeMood" name="mood" class="home-mood-select" required>
-                        {% for mood in [
-                            'Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic',
-                            'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous'
-                        ] %}
-                        <option value="{{ mood }}"
-                            {% if current_user.preferred_mood == mood %}selected{% endif %}>
-                            {{ mood }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="home-mood-submit">SAVE MOOD CHECK-IN</button>
-                </form>
-            </aside>
+          </div>
+          <div class="dash-grid" id="trackGrid" aria-live="polite">
+            {% for t in all_tracks %}
+            <article class="dash-card" data-slug="{{ t.slug }}">
+              <div class="dash-cover" data-cover="{{ t.title }}" data-cover-mood="{{ t.mood }}">
+                <button type="button" class="dash-play" aria-label="Play {{ t.title }}">{{ ico('play') }}</button>
+              </div>
+              <div class="dash-card-copy">
+                <a class="dash-card-title" href="{{ url_for('main.listen', slug=t.slug) }}">{{ t.title }}</a>
+                <p>{{ t.artist }}</p>
+                <div class="dash-tags"><span>{{ t.mood }}</span><span>{{ t.genre }}</span><span>{{ t.duration }}</span></div>
+              </div>
+            </article>
+            {% else %}
+            <div class="dash-empty"><strong>Your music shelf is waiting.</strong>Tracks will appear here once they are added to the library.</div>
+            {% endfor %}
+          </div>
+          <div class="dash-empty" id="trackEmpty" hidden></div>
         </section>
 
-        <section class="home-bottom-note">
-            <span><strong>Your space, your pace.</strong> More listening experiences are being built for MOODIFY.</span>
-            <a href="{{ url_for('main.recommendations') }}">SEE RECOMMENDATIONS →</a>
+        {# ---------- Playlists ---------- #}
+        <section class="dash-section" id="playlists" aria-labelledby="plTitle">
+          <div class="dash-head">
+            <div>
+              <h2 id="plTitle">Your playlists</h2>
+              <p>Open one to see its tracks here, or press play to start listening.</p>
+            </div>
+            <div class="dash-head-actions">
+              <button type="button" class="dash-chip" id="newPlaylistBtn">{{ ico('plus') }}<span>New playlist</span></button>
+              <a class="dash-link" href="{{ url_for('main.playlist') }}">Manage playlists &rarr;</a>
+            </div>
+          </div>
+          <form class="dash-newpl" id="newPlaylistForm" method="POST" action="{{ url_for('main.create_playlist') }}" hidden>
+            <input type="text" name="name" id="newPlaylistName" maxlength="150" placeholder="Name your playlist" aria-label="Playlist name" required>
+            <button type="submit" class="dash-btn primary"><span>Create</span></button>
+            <button type="button" class="dash-btn" id="newPlaylistCancel"><span>Cancel</span></button>
+          </form>
+          <div class="dash-grid" id="plGrid">
+            {% for pl in playlists %}
+            <article class="dash-card" data-playlist-card="{{ pl.id }}">
+              <div class="dash-cover" data-cover="{{ pl.name }}">
+                <button type="button" class="dash-play" aria-label="Play {{ pl.name }}">{{ ico('play') }}</button>
+              </div>
+              <div class="dash-card-copy">
+                <button type="button" class="dash-card-title as-button" data-open-playlist="{{ pl.id }}">{{ pl.name }}</button>
+                <p>{{ pl.catalog_tracks|length }} saved track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</p>
+              </div>
+            </article>
+            {% else %}
+            <div class="dash-empty"><strong>No playlists yet.</strong>Create one with the button above, then add tracks from the library.</div>
+            {% endfor %}
+          </div>
         </section>
 
-        <footer class="home-footer">
-            YOUR MUSIC · YOUR MOOD · YOUR MOODIFY
-        </footer>
+        {# ---------- Tools ---------- #}
+        <section class="dash-section" id="tools" aria-labelledby="toolsTitle">
+          <div class="dash-head"><div><h2 id="toolsTitle">Your tools</h2><p>Everything else in MOODIFY, one click away.</p></div></div>
+          <div class="dash-tools">
+            <a href="{{ url_for('main.recommendations') }}" class="dash-tool">{{ ico('recs') }}<span><strong>Recommendations</strong><small>A mix ranked from your profile and check-ins</small></span></a>
+            <a href="{{ url_for('main.moodometer') }}" class="dash-tool">{{ ico('journal') }}<span><strong>Mood journal</strong><small>Your mood timeline and stats</small></span></a>
+            <a href="{{ url_for('main.music') }}" class="dash-tool">{{ ico('library') }}<span><strong>Music library</strong><small>Search and filter every track</small></span></a>
+            <a href="{{ url_for('main.setup') }}" class="dash-tool">{{ ico('user') }}<span><strong>Preferences</strong><small>Language, favourite artist and mood</small></span></a>
+          </div>
+        </section>
 
+        <footer class="dash-foot">Your music · Your mood · Your MOODIFY</footer>
+      </div>
     </main>
+  </div>
+
+  {# ============================ BOTTOM PLAYER ============================ #}
+  <section class="dash-player" id="dashPlayer" aria-label="Player" data-empty="true">
+    <div class="dash-now">
+      <div class="dash-now-cover" id="nowCover"></div>
+      <div class="dash-now-copy">
+        <strong id="nowTitle">Nothing playing</strong>
+        <span id="nowArtist">Press play on any track</span>
+      </div>
+    </div>
+
+    <div class="dash-transport">
+      <div class="dash-buttons">
+        <button type="button" class="dash-ctl" id="btnPrev" aria-label="Previous track">{{ ico('prev') }}</button>
+        <button type="button" class="dash-ctl main" id="btnPlay" aria-label="Play">{{ ico('play') }}</button>
+        <button type="button" class="dash-ctl" id="btnNext" aria-label="Next track">{{ ico('next') }}</button>
+      </div>
+      <div class="dash-seekrow">
+        <span class="dash-time" id="timeNow">0:00</span>
+        <input type="range" class="dash-range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled>
+        <span class="dash-time" id="timeEnd">0:00</span>
+      </div>
+    </div>
+
+    <div class="dash-extra">
+      <a class="dash-ctl small" id="openFull" href="{{ url_for('main.music') }}" aria-label="Open full player" title="Open full player (lyrics, queue, modes)">{{ ico('expand') }}</a>
+      <button type="button" class="dash-ctl small" id="btnMute" aria-label="Mute">{{ ico('volume') }}</button>
+      <input type="range" class="dash-range vol" id="vol" min="0" max="100" value="80" step="1" aria-label="Volume">
+    </div>
+
+    <audio id="audioPlayer" preload="none"></audio>
+    <p class="dash-player-msg" id="playerMsg" role="status" hidden></p>
+  </section>
+
+  {# ============================ MOBILE BOTTOM NAV ============================ #}
+  <nav class="dash-bottomnav" aria-label="Mobile">
+    <a href="#top" class="active" data-jump="top">{{ ico('home') }}<span>Home</span></a>
+    <a href="#moods" data-jump="moods">{{ ico('moods') }}<span>Moods</span></a>
+    <a href="#playlists" data-jump="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
+    <a href="{{ url_for('main.music') }}">{{ ico('library') }}<span>Library</span></a>
+    <a href="{{ url_for('main.profile') }}">{{ ico('user') }}<span>Profile</span></a>
+  </nav>
 </div>
+
+{# ---------- data for dashboard.js (kept as JSON so nothing is guessed on the client) ---------- #}
+{% set data_tracks = [] %}
+{% for t in all_tracks %}
+  {% set _ = data_tracks.append({
+    'slug': t.slug, 'id': t.id, 'title': t.title, 'artist': t.artist, 'composer': t.composer,
+    'genre': t.genre, 'mood': t.mood, 'language': t.language, 'duration': t.duration,
+    'audio': t.audio_url, 'fallback': t.fallback_audio_url,
+    'url': url_for('main.listen', slug=t.slug),
+    'rank': (picked_ids.index(t.id) if t.id in picked_ids else 99)
+  }) %}
+{% endfor %}
+{% set data_lists = [] %}
+{% for pl in playlists %}
+  {% set _ = data_lists.append({
+    'id': pl.id, 'name': pl.name,
+    'slugs': pl.catalog_tracks | map(attribute='catalog_slug') | list,
+    'url': url_for('main.playlist_detail', playlist_id=pl.id)
+  }) %}
+{% endfor %}
+<script type="application/json" id="dashData">{{ {
+  'tracks': data_tracks,
+  'playlists': data_lists,
+  'moods': mood_cards,
+  'saveable': checkin_moods,
+  'current': current_user.preferred_mood or '',
+  'urls': {'library': url_for('main.music')}
+} | tojson }}</script>
 
 {% endblock %}

@@ -88,16 +88,22 @@ MOODIFY/
 
 Enjoy building with MOODIFY!
 
-## Motion & polish layer
-The interface has an optional front-end layer that adds a mood-reactive ambient
-background, smooth scrolling, scroll reveals, a cursor glow, magnetic buttons,
-tilt cards and synthesised interface sounds (with a Sound On/Mute button in the header).
+## Home dashboard and motion layer
+The home page (`/home`) is a Spotify-style dashboard: left sidebar (navigation + your playlists), a top bar
+(search, quick mood pills, sound on/off, account menu), a scrolling workspace (mood cards, tracks, playlists,
+tools) and a bottom player that stays visible while you browse the dashboard. On phones the sidebar becomes a
+bottom navigation bar.
 
-- Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. `flair.js` adds the intro curtain and page transitions, word-by-word headlines, click ripples, the mood colour flood, the sparkle trail, the home-page mood marquee and the gliding nav highlight. No backend code is involved.
+- Files: `app/templates/home.html`, `app/static/css/dashboard.css`, `app/static/js/dashboard.js`. The page gets its data from the existing `home()` route, which now also passes `all_tracks` and the user's `playlists` (purely additive). Mood check-ins still post to `/mood-checkin`; playlist creation still posts to `/playlist/create`.
+- Filtering, search and playlist views happen in the page with no reload. The player plays the catalogue audio directly and remembers its place if you open another page and come back in the same tab (audio itself stops when you leave the dashboard; use "Open full player" for lyrics and modes).
+- There are no intro screens, curtains or page-transition delays anywhere. Pages fade in over about 180 ms.
+
+The rest of the interface has an optional front-end layer (ambient background, scroll reveals, magnetic buttons, tilt cards, synthesised interface sounds with a Sound button in the header).
+
+- Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. No backend code is involved.
+- `art.js` replaces the mood drop-downs on the setup page with icon tiles (the real `<select>` stays in the form) and draws generated cover art for tracks and playlists. No images are downloaded.
 - Libraries (GSAP, ScrollTrigger, Lenis) and the Inter font are stored in `app/static/vendor/` (see its README for versions and licences). Nothing is loaded from a CDN by this layer.
-- `art.js` replaces the mood drop-downs on the home and setup pages with icon tiles (the real `<select>` stays in the form, so nothing changes on the server) and draws generated cover art for tracks and playlists from their titles. No images are downloaded.
-- Performance: the background is a single small canvas, no live blur is used, and the page switches itself to a lighter "lite" mode if it measures low frame rates (phones start in lite mode). Force it with `?fx=lite`, or back with `?fx=rich`.
+- Performance: no live blur is used, and the page switches itself to a lighter "lite" mode if it measures low frame rates (phones start in lite mode). Force it with `?fx=lite`, or back with `?fx=rich`.
 - It respects `prefers-reduced-motion`; the cursor, tilt and magnetic effects are disabled on touch devices.
 - To see the site without the scripts, add `?fx=off` to any URL.
 - Smoke tests: `python -m pytest tests`
-
