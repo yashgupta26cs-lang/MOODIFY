@@ -229,6 +229,8 @@
       sync();
     }
 
-    FX.qsa('#homeMood, #preferred_mood').forEach(tilePicker);
+    /* Also callable again after the app swaps in a new page (see js/app.js). */
+    FX.tiles = function (ctx) { FX.qsa('#homeMood, #preferred_mood', ctx).forEach(tilePicker); };
+    FX.tiles();
   });
 })(window);

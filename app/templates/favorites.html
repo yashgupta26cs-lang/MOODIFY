@@ -1,0 +1,23 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% from '_cards.html' import track_table %}
+{% set page_id = 'favorites' %}
+{% set nav = 'favorites' %}
+{% block title %}Favourites | MOODIFY{% endblock %}
+{% block page %}
+<section class="detail-hero fav-hero">
+  <div class="detail-art"><span class="fav-heart">{{ ico('heart-fill') }}</span></div>
+  <div class="detail-copy">
+    <span class="kicker">Playlist</span>
+    <h1>Favourites</h1>
+    <p>{{ current_user.username }} · {{ tracks|length }} track{{ '' if tracks|length == 1 else 's' }}</p>
+    <div class="detail-actions">
+      {% if tracks %}<button type="button" class="dash-btn primary big" data-play-all><span>{{ ico('play') }}Play all</span></button>{% endif %}
+      <a class="dash-btn" href="{{ url_for('main.music') }}"><span>{{ ico('search') }}Find more music</span></a>
+    </div>
+  </div>
+</section>
+<div id="favTable">
+{{ track_table(tracks, favorite_slugs, 'Nothing here yet. Tap the heart on any track to save it to your favourites.') }}
+</div>
+{% endblock %}

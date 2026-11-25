@@ -1,76 +1,31 @@
-{% extends 'base.html' %}
-{% block title %}Your Playlists | MOODIFY{% endblock %}
-{% block content %}
-<style>
-:root{--pl-night:#0a1821;--pl-mint:#83e8c7;--pl-muted:#9bb0b1}
-body:has(.playlist-page){margin:0;background:var(--pl-night);color:#f7f7f1;font-family:"Segoe UI",Arial,sans-serif;overflow-x:hidden}
-body:has(.playlist-page)>nav.navbar{display:none!important}
-body:has(.playlist-page)>.container{max-width:none;width:100%;padding:0;margin:0}
-body:has(.playlist-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
-.playlist-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--pl-night)}
-.pl-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
-.pl-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}.pl-brand:hover{color:#fff}
-.pl-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;border:1px solid #83e8c788;color:var(--pl-mint);background:linear-gradient(145deg,#21483f,#102b30);font-size:23px}
-.pl-nav{display:flex;gap:6px;flex-wrap:wrap}.pl-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}.pl-nav a:hover,.pl-nav a.active{color:var(--pl-mint);background:#83e8c711}
-.pl-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}.pl-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--pl-night);background:var(--pl-mint)}.pl-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
-.pl-main{width:min(1180px,92%);margin:0 auto;padding:42px 0 55px}
-.pl-hero{display:flex;align-items:end;justify-content:space-between;gap:22px;margin-bottom:25px}
-.pl-kicker{margin-bottom:12px;color:var(--pl-mint);font-size:9px;font-weight:900;letter-spacing:2.5px}
-.pl-hero h1{margin:0;color:#f7f7f1;font-size:clamp(31px,4vw,44px);line-height:1.08;letter-spacing:-1.5px;font-weight:850}.pl-hero h1 span{color:var(--pl-mint)}
-.pl-hero p{max-width:590px;margin:12px 0 0;color:var(--pl-muted);font-size:13px;line-height:1.7}
-.pl-create{display:flex;gap:8px;width:min(390px,100%);padding:7px;border:1px solid #83e8c733;border-radius:13px;background:#ffffff08}
-.pl-create input{flex:1;min-width:0;padding:0 12px;border:0;outline:0;color:#fff;background:transparent;font-size:11px}.pl-create input::placeholder{color:#819699}
-.pl-create button,.pl-primary{min-height:42px;padding:0 16px;border:0;border-radius:9px;color:#0a1821;background:var(--pl-mint);font-size:9px;font-weight:950;letter-spacing:.6px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
-.pl-create button:hover,.pl-primary:hover{color:#0a1821;background:#a6f2d9}
-.pl-section-title{display:flex;align-items:center;justify-content:space-between;gap:15px;margin:32px 0 15px}
-.pl-section-title h2{margin:0;color:#f4f6ef;font-size:18px;font-weight:850}.pl-section-title span{color:#91a8a7;font-size:10px}
-.pl-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.pl-card{overflow:hidden;border:1px solid #ffffff18;border-radius:18px;background:linear-gradient(145deg,#ffffff0c,#ffffff05);transition:.22s ease}
-.pl-card:hover{transform:translateY(-4px);border-color:#83e8c75b;box-shadow:0 18px 45px #0003}
-.pl-art{height:172px;position:relative;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 30% 25%,#83e8c74a,transparent 30%),linear-gradient(130deg,#1d514b,#102630 65%,#1b3442)}
-.pl-art:nth-child(3n+2){background:radial-gradient(circle at 70% 30%,#c6d4ed45,transparent 30%),linear-gradient(130deg,#354766,#111d2c 65%,#303b50)}
-.pl-art:nth-child(3n){background:radial-gradient(circle at 50% 35%,#d6b77a3a,transparent 32%),linear-gradient(130deg,#554633,#1b2830 65%,#3b303d)}
-.pl-art:before,.pl-art:after{content:"";position:absolute;width:220px;height:220px;border:1px solid #ffffff25;border-radius:50%}
-.pl-art:before{transform:translate(-65px,65px)}.pl-art:after{transform:translate(90px,-80px)}
-.pl-art-disc{width:120px;height:120px;position:relative;z-index:1;border:1px solid #83e8c788;border-radius:50%;background:repeating-radial-gradient(circle,#07141c 0 7px,#24423e 8px 9px);box-shadow:0 15px 35px #0006}
-.pl-art-disc:after{content:"♫";position:absolute;inset:38%;display:grid;place-items:center;border-radius:50%;color:#0a1821;background:var(--pl-mint);font-size:17px;font-weight:900}
-.pl-art-label{position:absolute;z-index:2;left:17px;bottom:14px;color:#dcece5;font-size:8px;font-weight:900;letter-spacing:2px}
-.pl-card-body{padding:17px}.pl-card h3{margin:0 0 5px;color:#f4f6ef;font-size:17px;font-weight:850;overflow-wrap:anywhere}
-.pl-card-meta{margin:0 0 14px;color:#91a8a7;font-size:10px}
-.pl-card-actions{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.pl-open{color:var(--pl-mint);font-size:9px;font-weight:950;letter-spacing:.7px;text-decoration:none}.pl-open:hover{color:#fff}
-.pl-delete{padding:7px 9px;border:1px solid #ffffff20;border-radius:8px;color:#a9b9bb;background:transparent;font-size:9px;font-weight:800;cursor:pointer}.pl-delete:hover{border-color:#e88e8e;color:#ffb2b2}
-.pl-empty{grid-column:1/-1;padding:38px 22px;border:1px dashed #83e8c755;border-radius:17px;text-align:center;color:#a8bbba;font-size:12px;line-height:1.7}
-.pl-empty strong{display:block;margin-bottom:8px;color:#f1f5ee;font-size:18px}
-.pl-empty-mark{width:55px;height:55px;display:grid;place-items:center;margin:0 auto 14px;border:1px solid #83e8c755;border-radius:16px;color:var(--pl-mint);background:#83e8c711;font-size:25px}
-.pl-browse{display:inline-flex;margin-top:14px;color:var(--pl-mint);font-size:10px;font-weight:900;text-decoration:none}
-.pl-footer{padding:28px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
-@media(max-width:900px){.pl-topbar{flex-wrap:wrap}.pl-nav{order:3;width:100%}.pl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:620px){.pl-topbar{padding:11px 4%}.pl-brand{font-size:17px}.pl-account span:not(.pl-avatar),.pl-logout{display:none}.pl-main{padding-top:28px}.pl-hero{align-items:flex-start;flex-direction:column}.pl-create{width:100%}.pl-grid{grid-template-columns:1fr}}
-</style>
-<div class="playlist-page">
-<header class="pl-topbar">
-<a class="pl-brand" href="{{ url_for('main.home') }}"><span class="pl-logo">♫</span> MOODIFY</a>
-<nav class="pl-nav" aria-label="Main navigation"><a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}">Music</a><a class="active" href="{{ url_for('main.playlist') }}">Playlists</a><a href="{{ url_for('main.moodometer') }}">Moodometer</a><a href="{{ url_for('main.recommendations') }}">For you</a></nav>
-<div class="pl-account"><span class="pl-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="pl-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
-</header>
-<main class="pl-main">
-<section class="pl-hero"><div><div class="pl-kicker">YOUR PERSONAL COLLECTION</div><h1>Make a space for<br><span>every sound.</span></h1><p>Build playlists for every version of you. Save tracks from the Music Library and play your collection in your own order.</p></div>
-<form class="pl-create" method="POST" action="{{ url_for('main.create_playlist') }}"><input type="text" name="name" maxlength="150" placeholder="Name your new playlist..." aria-label="New playlist name" required><button type="submit">＋ CREATE</button></form>
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% from '_cards.html' import playlist_card %}
+{% set page_id = 'playlists' %}
+{% set nav = 'playlists' %}
+{% block title %}Playlists | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-hero">
+  <div>
+    <span class="kicker">Your collection</span>
+    <h1>Make a space for every sound</h1>
+    <p>Build playlists for every version of you. Save tracks from Search, or from any track card, and play them all in one go.</p>
+  </div>
+  <div class="stat"><strong>{{ playlists|length }}</strong><small>playlist{{ '' if playlists|length == 1 else 's' }}</small></div>
 </section>
-<div class="pl-section-title"><h2>Your playlists</h2><span>{{ playlists|length }} collection{{ '' if playlists|length == 1 else 's' }}</span></div>
-<section class="pl-grid" aria-label="Your playlists">
-{% for pl in playlists %}
-<article class="pl-card">
-<div class="pl-art"><div class="pl-art-disc"></div><div class="pl-art-label">MOODIFY · YOUR MIX</div></div>
-<div class="pl-card-body"><h3>{{ pl.name }}</h3><p class="pl-card-meta">{{ pl.catalog_tracks|length }} saved track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</p>
-<div class="pl-card-actions"><a class="pl-open" href="{{ url_for('main.playlist_detail', playlist_id=pl.id) }}">OPEN PLAYLIST →</a>
-<form method="POST" action="{{ url_for('main.delete_playlist', playlist_id=pl.id) }}" onsubmit="return confirm('Delete this playlist? This cannot be undone.');"><button class="pl-delete" type="submit">DELETE</button></form></div></div>
-</article>
-{% else %}
-<div class="pl-empty"><div class="pl-empty-mark">♫</div><strong>Your first playlist starts here.</strong>Create a collection, then save tracks from the Music Library.<br><a class="pl-browse" href="{{ url_for('main.music') }}">EXPLORE THE MUSIC LIBRARY →</a></div>
-{% endfor %}
+
+<form class="create-bar" id="new" method="POST" action="{{ url_for('main.create_playlist') }}">
+  <input type="text" name="name" id="newPlaylistName" maxlength="150" placeholder="Name your new playlist" aria-label="New playlist name" required>
+  <button type="submit" class="dash-btn primary" data-sfx="none"><span>{{ ico('plus') }}Create playlist</span></button>
+</form>
+
+<section class="dash-section" aria-labelledby="plsTitle">
+  <div class="dash-head"><div><h2 id="plsTitle">Your playlists</h2></div></div>
+  <div class="dash-grid" data-queue-scope>
+    {% for pl in playlists %}{{ playlist_card(pl, True) }}
+    {% else %}
+    <div class="dash-empty"><strong>Your first playlist starts here.</strong>Name one above, then save tracks from <a href="{{ url_for('main.music') }}">Search</a>.</div>
+    {% endfor %}
+  </div>
 </section>
-<footer class="pl-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
-</main></div>
 {% endblock %}

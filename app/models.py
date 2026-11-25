@@ -89,3 +89,13 @@ class MoodHistory(db.Model):
     mood = db.Column(db.String(50), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+class FavoriteTrack(db.Model):
+    """A catalogue track the user has hearted. Additive table: created on start-up."""
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
+    catalog_slug = db.Column(db.String(120), nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'catalog_slug', name='uq_favorite_track'),
+    )

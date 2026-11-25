@@ -1,0 +1,22 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'auth' %}
+{% set nav = '' %}
+{% block title %}{{ 'Create your account' if mode == 'register' else 'Log in' }} | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-center">
+  <div class="auth-card static" data-auth-page="{{ mode }}">
+    <div class="auth-head">
+      <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h1>{{ 'Create your account' if mode == 'register' else 'Welcome back' }}</h1>
+      <p>Log in to save playlists, heart tracks and keep your mood journal. You can always keep browsing as a guest.</p>
+    </div>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" role="tab" data-auth-tab="login" aria-selected="{{ 'true' if mode == 'login' else 'false' }}">Log in</button>
+      <button type="button" role="tab" data-auth-tab="register" aria-selected="{{ 'true' if mode == 'register' else 'false' }}">Sign up</button>
+    </div>
+    {% include '_auth_forms.html' %}
+    <a class="auth-guest" href="{{ url_for('main.index') }}">Keep browsing as a guest</a>
+  </div>
+</section>
+{% endblock %}

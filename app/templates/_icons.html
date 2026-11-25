@@ -1,0 +1,31 @@
+{% macro ico(name) -%}
+{%- if name == 'home' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7v9.4a.8.8 0 0 1-.8.8H14.5v-6h-5v6H4.300a.8.8 0 0 1-.8-.8z"/></svg>
+{%- elif name == 'moods' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.500"/><path d="M8.600 14.200c.9 1.300 2.100 2 3.400 2s2.500-.7 3.400-2"/><path d="M9 9.800h.01M15 9.800h.01"/></svg>
+{%- elif name == 'playlists' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.500h11M4 11.500h11M4 16.500h6"/><path d="M18.500 14.500v-8l2.500 1.200"/><circle cx="16.500" cy="16.800" r="2.200"/></svg>
+{%- elif name == 'library' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.500v15M10 4.500v15"/><path d="m14.500 5.300 4.600-1 2.400 14.600-4.600 1z"/></svg>
+{%- elif name == 'journal' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.500 9 12l3.500 3.500L20 6.500"/><path d="M15 6.500h5v5"/></svg>
+{%- elif name == 'recs' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.500 2.400 5.100 5.600.7-4.100 3.900 1 5.500L12 15.900 7.100 18.700l1-5.500L4 9.300l5.600-.7z"/></svg>
+{%- elif name == 'user' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.500" r="3.800"/><path d="M4.500 20c.8-3.700 3.600-5.600 7.500-5.600s6.700 1.900 7.500 5.600"/></svg>
+{%- elif name == 'search' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4.500 4.500"/></svg>
+{%- elif name == 'plus' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+{%- elif name == 'play' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M8 5.200v13.600a.8.8 0 0 0 1.200.7l10.800-6.800a.8.8 0 0 0 0-1.400L9.200 4.500A.8.8 0 0 0 8 5.200z"/></svg>
+{%- elif name == 'pause' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><rect x="6.500" y="5" width="3.800" height="14" rx="1.200"/><rect x="13.700" y="5" width="3.800" height="14" rx="1.200"/></svg>
+{%- elif name == 'prev' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M6 5h2v14H6z"/><path d="M19 5.800v12.400a.6.6 0 0 1-.9.5L9.800 12.500a.6.6 0 0 1 0-1z"/></svg>
+{%- elif name == 'next' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M16 5h2v14h-2z"/><path d="M5 5.800v12.400a.6.6 0 0 0 .9.5l8.300-6.200a.6.6 0 0 0 0-1L5.900 5.300a.6.6 0 0 0-.9.500z"/></svg>
+{%- elif name == 'volume' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18 6.500a7.700 7.700 0 0 1 0 11"/></svg>
+{%- elif name == 'expand' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.500h5.500V10M10 19.500H4.500V14M19.500 4.500 13 11M4.500 19.500 11 13"/></svg>
+{%- elif name == 'check' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.500L19 7.500"/></svg>
+{%- elif name == 'close' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+
+{%- elif name == 'heart' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.500-4.600-7.500-10.300A4.300 4.300 0 0 1 12 7.200a4.300 4.300 0 0 1 7.500 2.500C19.500 15.400 12 20 12 20z"/></svg>
+{%- elif name == 'heart-fill' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M12 20s-7.500-4.600-7.500-10.300A4.300 4.300 0 0 1 12 7.200a4.300 4.300 0 0 1 7.500 2.500C19.500 15.400 12 20 12 20z"/></svg>
+{%- elif name == 'sound-on' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18 6.500a7.700 7.700 0 0 1 0 11"/></svg>
+{%- elif name == 'sound-off' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="m16 9.500 5 5M21 9.500l-5 5"/></svg>
+{%- elif name == 'trash' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.500 7h15M9.500 7V4.500h5V7M6.500 7l.8 12.500h9.400L17.500 7M10 11v5.500M14 11v5.500"/></svg>
+{%- elif name == 'clock' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.500"/><path d="M12 7.500V12l3 2"/></svg>
+{%- elif name == 'back' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.500 5.500 8 12l6.500 6.500"/></svg>
+{%- elif name == 'settings' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+{%- elif name == 'lock' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10.500" width="14" height="9.500" rx="2"/><path d="M8.500 10.500V8a3.500 3.500 0 0 1 7 0v2.500"/></svg>
+{%- elif name == 'note' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 17.500V6l10-2v11.500"/><circle cx="6.500" cy="17.500" r="2.500"/><circle cx="16.500" cy="15.500" r="2.500"/></svg>
+{%- endif -%}
+{%- endmacro %}

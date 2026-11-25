@@ -1,9 +1,34 @@
-{% extends 'base.html' %}
-{% block title %}Profile - MOODIFY{% endblock %}
-{% block content %}
-<h2 class="mb-4">Your Profile</h2>
-<ul class="list-group">
-  <li class="list-group-item"><strong>Username:</strong> {{ current_user.username }}</li>
-  <li class="list-group-item"><strong>Email:</strong> {{ current_user.email }}</li>
-</ul>
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'profile' %}
+{% set nav = 'profile' %}
+{% block title %}Profile | MOODIFY{% endblock %}
+{% block page %}
+<section class="detail-hero profile-hero">
+  <div class="detail-art round"><span class="profile-avatar">{{ (current_user.username or 'M')[0]|upper }}</span></div>
+  <div class="detail-copy">
+    <span class="kicker">Profile</span>
+    <h1>{{ current_user.username }}</h1>
+    <p>{{ current_user.email }}</p>
+    <div class="detail-actions">
+      <a class="dash-btn primary" href="{{ url_for('main.setup') }}"><span>{{ ico('settings') }}Edit preferences</span></a>
+      <a class="dash-btn" href="{{ url_for('auth.logout') }}" data-pjax="off"><span>Log out</span></a>
+    </div>
+  </div>
+</section>
+<div class="stat-row">
+  <a class="stat-card" href="{{ url_for('main.playlist') }}"><strong>{{ playlist_count }}</strong><small>Playlists</small></a>
+  <a class="stat-card" href="{{ url_for('main.favorites') }}"><strong>{{ favorite_count }}</strong><small>Favourites</small></a>
+  <a class="stat-card" href="{{ url_for('main.moodometer') }}"><strong>{{ checkin_count }}</strong><small>Mood check-ins</small></a>
+</div>
+<section class="dash-section">
+  <div class="dash-head"><div><h2>Your taste</h2><p>These shape the Picked for your vibe row and your recommendations.</p></div></div>
+  <div class="info-list">
+    <div><small>Username</small><strong>{{ current_user.username }}</strong></div>
+    <div><small>Email</small><strong>{{ current_user.email }}</strong></div>
+    <div><small>Music language</small><strong>{{ current_user.preferred_language or 'Not set yet' }}</strong></div>
+    <div><small>Favourite artist</small><strong>{{ current_user.favorite_singer or 'Not set yet' }}</strong></div>
+    <div><small>Current mood</small><strong>{{ current_user.preferred_mood or 'Not set yet' }}</strong></div>
+  </div>
+</section>
 {% endblock %}

@@ -176,7 +176,9 @@ body:has(.dash) > .container > .alert.bye { opacity: 0; transition: opacity 0.2s
 .dash-work { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #323c43 transparent; outline: none; }
 .dash-work::-webkit-scrollbar { width: 10px; }
 .dash-work::-webkit-scrollbar-thumb { background: #323c43; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
-.dash-inner { padding: 8px 28px 36px; animation: dash-in 0.2s ease-out both; }
+.dash-inner { padding: 8px 28px 36px; }
+.dash-inner.is-in { animation: dash-in 0.18s ease-out both; }
+.dash-inner.is-out { opacity: 0; transform: translateY(-6px); transition: opacity 0.1s ease, transform 0.1s ease; }
 @keyframes dash-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .dash-work.lenis, .dash-work.lenis-smooth { scroll-behavior: auto; }
 

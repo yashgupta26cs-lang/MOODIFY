@@ -15,7 +15,8 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 FX_FILES = [
-    "css/fx.css", "css/fx-flair.css", "css/dashboard.css", "js/dashboard.js",
+    "css/fx.css", "css/fx-flair.css", "css/dashboard.css", "css/pages.css",
+    "js/sound.js", "js/app.js", "js/pages.js",
     "js/fx/core.js", "js/fx/icons.js", "js/fx/ambient.js",
     "js/fx/art.js", "js/fx/flair.js", "js/fx/motion.js", "js/fx/pointer.js",
     "vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/lenis.min.js",
@@ -65,8 +66,10 @@ def test_layer_has_no_external_dependencies():
         assert not re.search(r"https?://(?!www\.w3\.org)", text), name
 
 
-def test_protected_routes_still_redirect(client):
-    assert client.get("/home").status_code in (301, 302)
+def test_saved_data_pages_still_need_a_login(client):
+    # the home page is open to guests now; pages that hold personal data are not
+    for path in ("/playlist", "/favorites", "/profile", "/moodometer"):
+        assert client.get(path).status_code == 401, path
 
 
 def test_art_module_is_loaded_before_flair(client):

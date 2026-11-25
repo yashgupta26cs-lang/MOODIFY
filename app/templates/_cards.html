@@ -1,0 +1,70 @@
+{# Reusable pieces so every page shows tracks and playlists the same way. #}
+{% from '_icons.html' import ico %}
+
+{% macro track_card(t, favs, signed_in) -%}
+<article class="dash-card" data-slug="{{ t.slug }}" data-mood="{{ t.mood }}" data-genre="{{ t.genre }}" data-language="{{ t.language }}" data-text="{{ [t.title, t.artist, t.composer, t.genre, t.mood, t.language]|join(' ')|lower }}">
+  <div class="dash-cover" data-cover="{{ t.title }}" data-cover-mood="{{ t.mood }}">
+    <button type="button" class="dash-play" data-play-slug="{{ t.slug }}" aria-label="Play {{ t.title }}">{{ ico('play') }}</button>
+  </div>
+  <div class="dash-card-copy">
+    <a class="dash-card-title" href="{{ url_for('main.listen', slug=t.slug) }}">{{ t.title }}</a>
+    <p>{{ t.artist }}</p>
+    <div class="dash-tags"><span>{{ t.mood }}</span><span>{{ t.genre }}</span><span>{{ t.duration }}</span></div>
+  </div>
+  <div class="dash-card-actions">
+    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}" data-sfx="none">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
+    <button type="button" class="dash-icon-btn" data-add-to-playlist="{{ t.slug }}" aria-label="Add {{ t.title }} to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro track_row(index, t, favs, remove_url=None) -%}
+<tr class="tl-row" data-slug="{{ t.slug }}">
+  <td class="tl-num"><span class="tl-n">{{ index }}</span><button type="button" class="tl-play" data-play-slug="{{ t.slug }}" aria-label="Play {{ t.title }}">{{ ico('play') }}</button><span class="dash-eq" aria-hidden="true"><i></i><i></i><i></i></span></td>
+  <td class="tl-title">
+    <span class="tl-cover" data-cover="{{ t.title }}" data-cover-mood="{{ t.mood }}"></span>
+    <span class="tl-copy"><a href="{{ url_for('main.listen', slug=t.slug) }}">{{ t.title }}</a><small>{{ t.artist }}</small></span>
+  </td>
+  <td class="tl-mood"><a class="tag" href="{{ url_for('main.mood_page', name=t.mood) }}">{{ t.mood }}</a><span class="tag soft">{{ t.genre }}</span></td>
+  <td class="tl-time">{{ t.duration }}</td>
+  <td class="tl-actions">
+    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}" data-sfx="none">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
+    <button type="button" class="dash-icon-btn" data-add-to-playlist="{{ t.slug }}" aria-label="Add {{ t.title }} to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
+    {% if remove_url %}
+    <form method="POST" action="{{ remove_url }}" class="inline-form"><button type="submit" class="dash-icon-btn danger" aria-label="Remove {{ t.title }} from this playlist" title="Remove from playlist" data-sfx="pop">{{ ico('trash') }}</button></form>
+    {% endif %}
+  </td>
+</tr>
+{%- endmacro %}
+
+{% macro track_table(tracks, favs, empty_text, remove_base=None) -%}
+<div class="tl-wrap" data-queue-scope>
+  <table class="tl">
+    <thead><tr><th class="tl-num">#</th><th>Title</th><th class="tl-mood">Mood</th><th class="tl-time">{{ ico('clock') }}</th><th class="tl-actions"><span class="sr">Actions</span></th></tr></thead>
+    <tbody>
+      {% for t in tracks %}
+        {{ track_row(loop.index, t, favs, (remove_base ~ t.slug) if remove_base else None) }}
+      {% else %}
+      <tr class="tl-empty"><td colspan="5">{{ empty_text }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}
+
+{% macro playlist_card(pl, deletable=False) -%}
+<article class="dash-card" data-playlist-card="{{ pl.id }}">
+  <div class="dash-cover" data-cover="{{ pl.name }}">
+    <button type="button" class="dash-play" data-play-playlist="{{ pl.id }}" aria-label="Play {{ pl.name }}">{{ ico('play') }}</button>
+  </div>
+  <div class="dash-card-copy">
+    <a class="dash-card-title" href="{{ url_for('main.playlist_detail', playlist_id=pl.id) }}">{{ pl.name }}</a>
+    <p>{{ pl.catalog_tracks|length }} saved track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</p>
+  </div>
+  {% if deletable %}
+  <form class="dash-card-actions" method="POST" action="{{ url_for('main.delete_playlist', playlist_id=pl.id) }}" data-confirm="Delete “{{ pl.name }}”? This cannot be undone.">
+    <button type="submit" class="dash-icon-btn danger" aria-label="Delete {{ pl.name }}" title="Delete playlist" data-sfx="pop">{{ ico('trash') }}</button>
+  </form>
+  {% endif %}
+</article>
+{%- endmacro %}

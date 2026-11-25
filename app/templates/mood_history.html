@@ -1,68 +1,36 @@
-{% extends 'base.html' %}
-{% block title %}Moodometer | MOODIFY{% endblock %}
-{% block content %}
-<style>
-:root{--mo-night:#0a1821;--mo-mint:#83e8c7;--mo-muted:#9bb0b1}
-body:has(.moodometer-page){margin:0;background:var(--mo-night);color:#f7f7f1;font-family:"Segoe UI",Arial,sans-serif;overflow-x:hidden}
-body:has(.moodometer-page)>nav.navbar{display:none!important}
-body:has(.moodometer-page)>.container{max-width:none;width:100%;padding:0;margin:0}
-body:has(.moodometer-page)>.container>.alert{width:min(1180px,92%);margin:18px auto;border-radius:12px}
-.moodometer-page{min-height:100vh;background:radial-gradient(ellipse at 8% 20%,#234d4c50,transparent 38%),radial-gradient(ellipse at 92% 65%,#29465b55,transparent 38%),var(--mo-night)}
-.mo-topbar{min-height:74px;padding:12px max(4%,calc((100% - 1180px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:1px solid #ffffff12;background:#07141bc9;backdrop-filter:blur(16px)}
-.mo-brand{display:flex;align-items:center;gap:11px;color:#fff;text-decoration:none;font-size:20px;font-weight:900;letter-spacing:3px}.mo-brand:hover{color:#fff}
-.mo-logo{width:39px;height:39px;display:grid;place-items:center;border-radius:12px;border:1px solid #83e8c788;color:var(--mo-mint);background:linear-gradient(145deg,#21483f,#102b30);font-size:23px}
-.mo-nav{display:flex;gap:6px;flex-wrap:wrap}.mo-nav a{padding:10px 13px;border-radius:9px;color:#a9b9bb;text-decoration:none;font-size:12px;font-weight:750}.mo-nav a:hover,.mo-nav a.active{color:var(--mo-mint);background:#83e8c711}
-.mo-account{display:flex;align-items:center;gap:10px;color:#f7f7f1;font-size:11px;font-weight:800}.mo-avatar{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;color:var(--mo-night);background:var(--mo-mint)}.mo-logout{color:#9bb0b1;text-decoration:none;font-size:11px}
-.mo-main{width:min(1180px,92%);margin:0 auto;padding:42px 0 55px}
-.mo-hero{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:24px}
-.mo-kicker{margin-bottom:12px;color:var(--mo-mint);font-size:9px;font-weight:900;letter-spacing:2.5px}
-.mo-hero h1{margin:0;color:#f7f7f1;font-size:clamp(31px,4vw,44px);line-height:1.08;letter-spacing:-1.5px;font-weight:850}.mo-hero h1 span{color:var(--mo-mint)}
-.mo-hero p{max-width:620px;margin:12px 0 0;color:var(--mo-muted);font-size:13px;line-height:1.7}
-.mo-checkin-link{min-height:42px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;border-radius:9px;color:#0a1821;background:var(--mo-mint);font-size:9px;font-weight:950;letter-spacing:.7px;text-decoration:none;white-space:nowrap}
-.mo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:22px 0}
-.mo-stat{padding:18px;border:1px solid #ffffff16;border-radius:14px;background:#ffffff08}
-.mo-stat small{display:block;color:#91a8a7;font-size:8px;font-weight:900;letter-spacing:1.4px}.mo-stat strong{display:block;margin-top:9px;color:#f4f6ef;font-size:24px;font-weight:850}.mo-stat strong span{color:var(--mo-mint);font-size:12px}
-.mo-panels{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.8fr);gap:16px;align-items:start}
-.mo-panel{min-width:0;padding:20px;border:1px solid #ffffff16;border-radius:17px;background:#ffffff08}
-.mo-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-.mo-panel-head h2{margin:0;color:#f3f6ef;font-size:16px;font-weight:850}.mo-panel-head p{margin:5px 0 0;color:#91a8a7;font-size:10px}
-.mo-range{height:34px;padding:0 10px;border:1px solid #ffffff22;border-radius:8px;color:#dcece5;background:#0b1b23;font-size:10px}
-.mo-chart-wrap{width:100%;overflow-x:auto}
-#moTimeline{display:block;width:100%;min-width:580px;height:auto}
-.mo-empty{padding:30px 15px;border:1px dashed #83e8c755;border-radius:12px;color:#a8bbba;text-align:center;font-size:11px;line-height:1.7}
-.mo-empty strong{display:block;margin-bottom:7px;color:#f2f6ef;font-size:16px}
-.mo-distribution{display:grid;gap:13px}
-.mo-dist-row{display:grid;grid-template-columns:82px 1fr 24px;align-items:center;gap:9px}
-.mo-dist-name{overflow:hidden;color:#c5d6d0;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
-.mo-dist-track{height:8px;overflow:hidden;border-radius:20px;background:#ffffff12}
-.mo-dist-fill{height:100%;width:0;border-radius:20px;transition:width .35s ease}
-.mo-dist-count{color:#9eb4af;text-align:right;font-size:10px;font-variant-numeric:tabular-nums}
-.mo-note{margin-top:17px;padding:14px 16px;border:1px solid #83e8c72b;border-radius:12px;color:#a9c7bd;background:#83e8c70a;font-size:10px;line-height:1.7}
-.mo-note strong{color:#dff3e9}
-.mo-footer{padding:28px 10px 3px;color:#637d80;text-align:center;font-size:8px;font-weight:800;letter-spacing:2px}
-@media(max-width:850px){.mo-topbar{flex-wrap:wrap}.mo-nav{order:3;width:100%}.mo-panels{grid-template-columns:1fr}}
-@media(max-width:620px){.mo-topbar{padding:11px 4%}.mo-brand{font-size:17px}.mo-account span:not(.mo-avatar),.mo-logout{display:none}.mo-main{padding-top:28px}.mo-hero{align-items:flex-start;flex-direction:column}.mo-stats{grid-template-columns:1fr 1fr}.mo-stat:last-child{grid-column:1/-1}.mo-panel{padding:14px}}
-</style>
-<div class="moodometer-page">
-<header class="mo-topbar">
-<a class="mo-brand" href="{{ url_for('main.home') }}"><span class="mo-logo">♫</span> MOODIFY</a>
-<nav class="mo-nav" aria-label="Main navigation"><a href="{{ url_for('main.home') }}">Discover</a><a href="{{ url_for('main.music') }}">Music</a><a href="{{ url_for('main.playlist') }}">Playlists</a><a class="active" href="{{ url_for('main.moodometer') }}">Moodometer</a><a href="{{ url_for('main.recommendations') }}">For you</a></nav>
-<div class="mo-account"><span class="mo-avatar">{{ (current_user.username or 'M')[0]|upper }}</span><span>{{ current_user.username }}</span><a class="mo-logout" href="{{ url_for('auth.logout') }}">Log out</a></div>
-</header>
-<main class="mo-main">
-<section class="mo-hero"><div><div class="mo-kicker">YOUR MOOD JOURNAL, VISUALISED</div><h1>Your feelings have<br><span>a timeline.</span></h1><p>See the moods you've chosen during check-ins, how often each one appears, and how your check-ins change over time.</p></div><a class="mo-checkin-link" href="{{ url_for('main.home') }}">＋ ADD A MOOD CHECK-IN</a></section>
-<section class="mo-stats">
-<div class="mo-stat"><small>TOTAL CHECK-INS</small><strong id="moTotal">{{ total_checkins }}</strong></div>
-<div class="mo-stat"><small>LATEST CHECK-IN</small><strong id="moLatest">{{ latest_mood or '—' }}</strong></div>
-<div class="mo-stat"><small>MOST SELECTED MOOD</small><strong id="moTop">{{ top_mood or '—' }}</strong></div>
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'journal' %}
+{% set nav = 'journal' %}
+{% block title %}Mood journal | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-hero">
+  <div>
+    <span class="kicker">Your mood journal, visualised</span>
+    <h1>Your feelings have a timeline</h1>
+    <p>See the moods you chose during check-ins, how often each one appears, and how your check-ins change over time.</p>
+  </div>
+  <a class="dash-btn primary" href="{{ url_for('main.index') }}#moods"><span>{{ ico('plus') }}Add a mood check-in</span></a>
+</section>
+<section class="stat-row">
+  <div class="stat-card"><strong id="moTotal">{{ total_checkins }}</strong><small>Total check-ins</small></div>
+  <div class="stat-card"><strong id="moLatest">{{ latest_mood or '—' }}</strong><small>Latest check-in</small></div>
+  <div class="stat-card"><strong id="moTop">{{ top_mood or '—' }}</strong><small>Most selected mood</small></div>
 </section>
 <section class="mo-panels">
-<div class="mo-panel"><div class="mo-panel-head"><div><h2>Mood timeline</h2><p>Each dot is one mood you selected.</p></div><select id="moRange" class="mo-range" aria-label="Timeline date range"><option value="all">All time</option><option value="90">Last 90 days</option><option value="30" selected>Last 30 days</option><option value="7">Last 7 days</option></select></div><div class="mo-chart-wrap"><svg id="moTimeline" viewBox="0 0 920 460" role="img" aria-label="Timeline of self-reported mood check-ins"></svg></div><div id="moTimelineEmpty" class="mo-empty" hidden><strong>No check-ins in this period.</strong>Choose another time range or add a mood check-in from Discover.</div></div>
-<div class="mo-panel"><div class="mo-panel-head"><div><h2>Mood distribution</h2><p>How often each mood was selected.</p></div></div><div id="moDistribution" class="mo-distribution"></div><div id="moDistributionEmpty" class="mo-empty" hidden><strong>No mood data yet.</strong>Your check-ins will appear here.</div></div>
+  <div class="mo-panel">
+    <div class="mo-panel-head"><div><h2>Mood timeline</h2><p>Each dot is one mood you selected.</p></div>
+      <select id="moRange" class="mo-range" aria-label="Timeline date range"><option value="all">All time</option><option value="90">Last 90 days</option><option value="30" selected>Last 30 days</option><option value="7">Last 7 days</option></select></div>
+    <div class="mo-chart-wrap"><svg id="moTimeline" viewBox="0 0 920 460" role="img" aria-label="Timeline of self-reported mood check-ins"></svg></div>
+    <div id="moTimelineEmpty" class="dash-empty" hidden><strong>No check-ins in this period.</strong>Choose another time range or add a mood check-in from Home.</div>
+  </div>
+  <div class="mo-panel">
+    <div class="mo-panel-head"><div><h2>Mood distribution</h2><p>How often each mood was selected.</p></div></div>
+    <div id="moDistribution" class="mo-distribution"></div>
+    <div id="moDistributionEmpty" class="dash-empty" hidden><strong>No mood data yet.</strong>Your check-ins will appear here.</div>
+  </div>
 </section>
-<div class="mo-note"><strong>A note about your Moodometer:</strong> this graph visualises your own check-in choices. It does not detect emotions, diagnose your mental health, or rate your mood as good or bad.</div>
-<footer class="mo-footer">YOUR MUSIC · YOUR MOOD · YOUR MOODIFY</footer>
-</main></div>
+<div class="note-box"><strong>A note about your mood journal:</strong> this graph visualises your own check-in choices. It does not detect emotions, diagnose your mental health, or rate your mood as good or bad.</div>
 <script>
 (function(){
  const entries={{ mood_entries|tojson }};

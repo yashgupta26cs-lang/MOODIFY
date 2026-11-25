@@ -1,0 +1,174 @@
+{#
+  The MOODIFY app shell. Every page of the app extends this file, so the left sidebar,
+  top bar and bottom player are the same everywhere and only the workspace changes.
+
+  A page sets:   {% set page_id = 'library' %}  {% set nav = 'search' %}
+  and writes its content inside {% block page %}.
+#}
+{% extends 'base.html' %}
+{% from '_icons.html' import ico %}
+{% block head_extra %}
+<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/pages.css') }}" rel="stylesheet">
+{% endblock %}
+{% block content %}
+{% set signed_in = current_user.is_authenticated %}
+<div class="dash" id="dash" data-page="{{ page_id|default('') }}" data-nav="{{ nav|default('') }}" data-signed-in="{{ 'true' if signed_in else 'false' }}" data-current-mood="{{ (current_user.preferred_mood if signed_in else '') or '' }}">
+
+  {# ============================ LEFT SIDEBAR ============================ #}
+  <aside class="dash-side" aria-label="Main">
+    <div class="dash-panel dash-nav-panel">
+      <a href="{{ url_for('main.index') }}" class="dash-brand" aria-label="MOODIFY home">
+        <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="dash-brand-word">MOODIFY</span>
+      </a>
+      <nav class="dash-nav" id="sideNav" aria-label="Sections">
+        <a href="{{ url_for('main.index') }}" data-nav="home">{{ ico('home') }}<span>Home</span></a>
+        <a href="{{ url_for('main.music') }}" data-nav="search">{{ ico('search') }}<span>Search</span></a>
+        <a href="{{ url_for('main.moods') }}" data-nav="moods">{{ ico('moods') }}<span>Moods</span></a>
+        <a href="{{ url_for('main.playlist') }}" data-nav="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
+        <a href="{{ url_for('main.favorites') }}" data-nav="favorites">{{ ico('heart') }}<span>Favourites</span></a>
+        <a href="{{ url_for('main.moodometer') }}" data-nav="journal">{{ ico('journal') }}<span>Mood journal</span></a>
+        <a href="{{ url_for('main.recommendations') }}" data-nav="recs">{{ ico('recs') }}<span>Recommendations</span></a>
+      </nav>
+    </div>
+
+    <div class="dash-panel dash-lists-panel" id="sideListsPanel">
+      <div class="dash-panel-head">
+        <span>Your playlists</span>
+        {% if signed_in %}<a class="dash-icon-btn" href="{{ url_for('main.playlist') }}#new" aria-label="Create a playlist" title="Create a playlist" data-new-playlist>{{ ico('plus') }}</a>{% endif %}
+      </div>
+      {% if signed_in %}
+      <div class="dash-side-lists" id="sideLists">
+        {% for pl in shell_playlists %}
+        <a href="{{ url_for('main.playlist_detail', playlist_id=pl.id) }}" class="dash-side-item" data-playlist-link="{{ pl.id }}">
+          <span class="dash-side-cover" data-cover="{{ pl.name }}"></span>
+          <span class="dash-side-copy"><strong>{{ pl.name }}</strong><small>{{ pl.catalog_tracks|length }} track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</small></span>
+        </a>
+        {% else %}
+        <p class="dash-side-empty">No playlists yet. Make one and fill it with tracks you love.</p>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="dash-side-guest">
+        <p>You are browsing as a guest. Log in to save playlists, heart tracks and sync your moods.</p>
+        <button type="button" class="dash-btn primary" data-auth-open="login"><span>Log in</span></button>
+        <button type="button" class="dash-btn" data-auth-open="register"><span>Sign up</span></button>
+      </div>
+      {% endif %}
+    </div>
+  </aside>
+
+  {# ============================ TOP BAR + WORKSPACE ============================ #}
+  <div class="dash-main">
+    <header class="dash-top">
+      <form class="dash-search" id="dashSearch" role="search" method="GET" action="{{ url_for('main.music') }}">
+        <span class="dash-search-ico">{{ ico('search') }}</span>
+        <input type="search" name="q" id="dashQuery" placeholder="Search songs, artists, genres or moods" autocomplete="off" aria-label="Search songs, artists, genres or moods">
+        <button type="button" class="dash-search-clear" id="dashQueryClear" aria-label="Clear search" hidden>{{ ico('close') }}</button>
+      </form>
+
+      <div class="dash-pills" id="dashPills" role="toolbar" aria-label="Quick mood filter">
+        <button type="button" class="dash-pill on" data-mood="">All</button>
+        {% for m in (moods or app_data.moods) %}<button type="button" class="dash-pill" data-mood="{{ m }}">{{ m }}</button>{% endfor %}
+      </div>
+
+      <div class="dash-account">
+        <button type="button" class="dash-icon-btn sound-toggle" id="soundToggle" aria-pressed="true" aria-label="Sound effects on" title="Sound effects: on" data-nosound>
+          <span class="s-on">{{ ico('sound-on') }}</span><span class="s-off">{{ ico('sound-off') }}</span>
+        </button>
+        {% if signed_in %}
+        <details class="dash-menu">
+          <summary aria-label="Account menu"><span class="dash-avatar">{{ (current_user.username or 'M')[0]|upper }}</span></summary>
+          <div class="dash-menu-pop">
+            <div class="dash-menu-who"><strong>{{ current_user.username }}</strong><small>Your listening space</small></div>
+            <a href="{{ url_for('main.profile') }}">Profile</a>
+            <a href="{{ url_for('main.favorites') }}">Favourites</a>
+            <a href="{{ url_for('main.setup') }}">Settings</a>
+            <a href="{{ url_for('auth.logout') }}" data-pjax="off">Log out</a>
+          </div>
+        </details>
+        {% else %}
+        <button type="button" class="dash-btn ghost" data-auth-open="register"><span>Sign up</span></button>
+        <button type="button" class="dash-btn primary" data-auth-open="login"><span>Log in</span></button>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="dash-work" id="dashWork" tabindex="-1">
+      <div class="dash-inner" id="dashInner">
+        {% block page %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  {# ============================ BOTTOM PLAYER ============================ #}
+  <section class="dash-player" id="dashPlayer" aria-label="Player" data-empty="true">
+    <div class="dash-now">
+      <div class="dash-now-cover" id="nowCover"></div>
+      <div class="dash-now-copy">
+        <strong id="nowTitle">Nothing playing</strong>
+        <span id="nowArtist">Press play on any track</span>
+      </div>
+      <button type="button" class="dash-icon-btn" id="nowHeart" aria-label="Add to favourites" hidden>{{ ico('heart') }}</button>
+    </div>
+
+    <div class="dash-transport">
+      <div class="dash-buttons">
+        <button type="button" class="dash-ctl" id="btnPrev" aria-label="Previous track">{{ ico('prev') }}</button>
+        <button type="button" class="dash-ctl main" id="btnPlay" aria-label="Play">{{ ico('play') }}</button>
+        <button type="button" class="dash-ctl" id="btnNext" aria-label="Next track">{{ ico('next') }}</button>
+      </div>
+      <div class="dash-seekrow">
+        <span class="dash-time" id="timeNow">0:00</span>
+        <input type="range" class="dash-range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled>
+        <span class="dash-time" id="timeEnd">0:00</span>
+      </div>
+    </div>
+
+    <div class="dash-extra">
+      <a class="dash-ctl small" id="openFull" href="{{ url_for('main.music') }}" aria-label="Open Now Playing" title="Open Now Playing (lyrics, queue, modes)">{{ ico('expand') }}</a>
+      <button type="button" class="dash-ctl small" id="btnMute" aria-label="Mute">{{ ico('volume') }}</button>
+      <input type="range" class="dash-range vol" id="vol" min="0" max="100" value="80" step="1" aria-label="Volume">
+    </div>
+
+    <audio id="audioPlayer" preload="none"></audio>
+    <p class="dash-player-msg" id="playerMsg" role="status" hidden></p>
+  </section>
+
+  {# ============================ MOBILE BOTTOM NAV ============================ #}
+  <nav class="dash-bottomnav" id="bottomNav" aria-label="Mobile">
+    <a href="{{ url_for('main.index') }}" data-nav="home">{{ ico('home') }}<span>Home</span></a>
+    <a href="{{ url_for('main.music') }}" data-nav="search">{{ ico('search') }}<span>Search</span></a>
+    <a href="{{ url_for('main.moods') }}" data-nav="moods">{{ ico('moods') }}<span>Moods</span></a>
+    <a href="{{ url_for('main.playlist') }}" data-nav="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
+    {% if signed_in %}<a href="{{ url_for('main.profile') }}" data-nav="profile">{{ ico('user') }}<span>Profile</span></a>
+    {% else %}<button type="button" data-auth-open="login">{{ ico('user') }}<span>Log in</span></button>{% endif %}
+  </nav>
+
+  <div class="dash-toasts" id="toasts" aria-live="polite"></div>
+
+{% if not signed_in %}
+{# ---------- Log in / Sign up pop-up (guests only). Closing it just returns to browsing. ---------- #}
+<div class="auth-modal" id="authModal" hidden>
+  <div class="auth-backdrop" data-auth-close></div>
+  <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+    <button type="button" class="auth-x" data-auth-close aria-label="Close">{{ ico('close') }}</button>
+    <div class="auth-head">
+      <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <h2 id="authModalTitle">Welcome to MOODIFY</h2>
+      <p>Log in to save playlists, heart tracks and keep your mood journal.</p>
+    </div>
+    <div class="auth-tabs" role="tablist">
+      <button type="button" role="tab" data-auth-tab="login" aria-selected="true">Log in</button>
+      <button type="button" role="tab" data-auth-tab="register" aria-selected="false">Sign up</button>
+    </div>
+    {% include '_auth_forms.html' %}
+    <button type="button" class="auth-guest" data-auth-close>Keep browsing as a guest</button>
+  </div>
+</div>
+{% endif %}
+</div>
+
+<script type="application/json" id="appData">{{ app_data | tojson }}</script>
+{% endblock %}

@@ -1,0 +1,20 @@
+{# The two sign-in forms. Used by the pop-up and by the dedicated /login and /register pages. #}
+{% set auth_next = next_url|default('') %}
+<form class="auth-form" data-auth-form="login" method="POST" action="{{ url_for('auth.login') }}" novalidate>
+  <input type="hidden" name="next" value="{{ auth_next }}" data-auth-next>
+  <label><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+  <label><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Your password" required></label>
+  <p class="auth-error" role="alert" hidden></p>
+  <button type="submit" class="dash-btn primary wide"><span>Log in</span></button>
+  <p class="auth-switch">New here? <button type="button" data-auth-tab="register">Create an account</button></p>
+</form>
+<form class="auth-form" data-auth-form="register" method="POST" action="{{ url_for('auth.register') }}" novalidate hidden>
+  <input type="hidden" name="next" value="{{ auth_next }}" data-auth-next>
+  <label><span>Username</span><input type="text" name="username" autocomplete="username" placeholder="Pick a username" required></label>
+  <label><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
+  <label><span>Mobile number</span><input type="tel" name="mobile" autocomplete="tel" inputmode="tel" placeholder="10 to 15 digits" required></label>
+  <label><span>Password</span><input type="password" name="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></label>
+  <p class="auth-error" role="alert" hidden></p>
+  <button type="submit" class="dash-btn primary wide"><span>Create account</span></button>
+  <p class="auth-switch">Already have an account? <button type="button" data-auth-tab="login">Log in</button></p>
+</form>

@@ -1,0 +1,19 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'gate' %}
+{% set nav = '' %}
+{% block title %}Log in to continue | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-center">
+  <div class="gate-card">
+    <span class="gate-ico">{{ ico('lock') }}</span>
+    <h1>This part is for members</h1>
+    <p>Playlists, favourites, your mood journal and preferences are saved to your account. Log in or sign up to open them. Everything else stays open for browsing.</p>
+    <div class="gate-actions">
+      <button type="button" class="dash-btn primary" data-auth-open="login" data-auth-next="{{ next_url }}"><span>Log in</span></button>
+      <button type="button" class="dash-btn" data-auth-open="register" data-auth-next="{{ next_url }}"><span>Sign up</span></button>
+      <a class="dash-link" href="{{ url_for('main.index') }}">Back to Home</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

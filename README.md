@@ -88,17 +88,21 @@ MOODIFY/
 
 Enjoy building with MOODIFY!
 
-## Home dashboard and motion layer
-The home page (`/home`) is a Spotify-style dashboard: left sidebar (navigation + your playlists), a top bar
-(search, quick mood pills, account menu), a scrolling workspace (mood cards, tracks, playlists,
-tools) and a bottom player that stays visible while you browse the dashboard. On phones the sidebar becomes a
-bottom navigation bar.
+## App shell, guest browsing and motion layer
+Moodify opens straight on the Spotify-style home page (`/`) with no login or splash screen. Every page uses
+the same shell: a left sidebar (navigation + your playlists), a top bar (search, mood pills, sound toggle,
+Log in / Sign up or your account menu), a scrolling workspace and a bottom player. On phones the sidebar
+becomes a bottom navigation bar.
 
-- Files: `app/templates/home.html`, `app/static/css/dashboard.css`, `app/static/js/dashboard.js`. The page gets its data from the existing `home()` route, which now also passes `all_tracks` and the user's `playlists` (purely additive). Mood check-ins still post to `/mood-checkin`; playlist creation still posts to `/playlist/create`.
-- Filtering, search and playlist views happen in the page with no reload. The player plays the catalogue audio directly and remembers its place if you open another page and come back in the same tab (audio itself stops when you leave the dashboard; use "Open full player" for lyrics and modes).
-- There are no intro screens, curtains or page-transition delays anywhere. Pages fade in over about 180 ms.
+- **Guests can browse.** Home, Search (`/music`), Moods (`/moods`, `/mood/<name>`) and track pages (`/listen/<slug>`) are public. Pages that hold personal data (Playlists, Favourites, Profile, Mood journal, Recommendations, Setup) show an in-shell "Log in to continue" page (HTTP 401) instead of redirecting.
+- **Log in / Sign up pop-up.** The buttons in the top bar and sidebar open a modal that posts to the existing `/login` and `/register` routes (with the `X-Moodify: json` header) and can be closed with X, Esc or a click outside. The full `/login` and `/register` pages still work.
+- **Fast navigation.** `app/static/js/app.js` swaps only the main workspace (about 100 ms fade-out, 180 ms fade-in) and keeps the sidebar, top bar and the single `<audio>` player alive, so music keeps playing while you move around. Links are prefetched on hover. Anything it cannot handle falls back to a normal page load, and `data-pjax="off"` opts a link out.
+- **Pages.** Home, Search, Moods, Playlists, Playlist detail (cover header, track table with hover play, duration, mood tags, quick actions), Favourites, Mood journal, Recommendations, Profile, Settings and Now Playing all share the design in `app/static/css/dashboard.css` + `pages.css`. Templates extend `shell.html`; shared pieces live in `_cards.html` and `_icons.html`.
+- **Favourites.** New `FavoriteTrack` table (created automatically by `db.create_all()`, additive) and `POST /favorites/toggle`.
+- **Sound effects (restored).** `app/static/js/sound.js` is one global, dependency-free Web Audio synthesiser (no audio files): a soft click on buttons, links, cards and player controls, and pop / chime / tick sounds for favourites, creating or deleting playlists and form submits. The `AudioContext` is created on the first click, tap or key press, effects are quieter while music plays, and the Sound / Mute button in the top bar is remembered in `localStorage` (`moodify.sound`). Add `data-sfx="none"` or `data-nosound` to silence a control.
+- Data for the shell comes from a context processor in `app/main.py` and is written into `#appData`. Mood check-ins still post to `/mood-checkin`; playlists still use `/playlist/...`.
 
-The rest of the interface has an optional front-end layer (ambient background, scroll reveals, magnetic buttons, tilt cards). There are no interface sound effects; only the music itself plays audio.
+The rest of the interface has an optional front-end layer (ambient background, scroll reveals, magnetic buttons, tilt cards).
 
 - Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. No backend code is involved.
 - `art.js` replaces the mood drop-downs on the setup page with icon tiles (the real `<select>` stays in the form) and draws generated cover art for tracks and playlists. No images are downloaded.
