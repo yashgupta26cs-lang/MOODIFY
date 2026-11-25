@@ -90,7 +90,7 @@ Enjoy building with MOODIFY!
 
 ## Home dashboard and motion layer
 The home page (`/home`) is a Spotify-style dashboard: left sidebar (navigation + your playlists), a top bar
-(search, quick mood pills, sound on/off, account menu), a scrolling workspace (mood cards, tracks, playlists,
+(search, quick mood pills, account menu), a scrolling workspace (mood cards, tracks, playlists,
 tools) and a bottom player that stays visible while you browse the dashboard. On phones the sidebar becomes a
 bottom navigation bar.
 
@@ -98,7 +98,7 @@ bottom navigation bar.
 - Filtering, search and playlist views happen in the page with no reload. The player plays the catalogue audio directly and remembers its place if you open another page and come back in the same tab (audio itself stops when you leave the dashboard; use "Open full player" for lyrics and modes).
 - There are no intro screens, curtains or page-transition delays anywhere. Pages fade in over about 180 ms.
 
-The rest of the interface has an optional front-end layer (ambient background, scroll reveals, magnetic buttons, tilt cards, synthesised interface sounds with a Sound button in the header).
+The rest of the interface has an optional front-end layer (ambient background, scroll reveals, magnetic buttons, tilt cards). There are no interface sound effects; only the music itself plays audio.
 
 - Files: `app/static/css/fx.css`, `app/static/css/fx-flair.css` and `app/static/js/fx/*.js`, loaded from `base.html`. No backend code is involved.
 - `art.js` replaces the mood drop-downs on the setup page with icon tiles (the real `<select>` stays in the form) and draws generated cover art for tracks and playlists. No images are downloaded.

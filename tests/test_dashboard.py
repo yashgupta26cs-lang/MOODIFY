@@ -89,3 +89,19 @@ def test_no_blocking_intro_or_curtain_left(logged_in):
         assert word not in flair_js and word not in flair_css
     core = (STATIC / "js/fx/core.js").read_text()
     assert "setTimeout(FX.openGate" not in core      # no failsafe delay: the gate is always open
+
+
+def test_no_interface_sound_effects():
+    """UI sound effects were removed on request: no module, no Web Audio code, no toggle."""
+    assert not (STATIC / "js/fx/sound.js").exists()
+    mine = list((STATIC / "js" / "fx").glob("*.js")) + [STATIC / "js" / "dashboard.js"]
+    for path in mine + list((STATIC / "css").glob("*.css")):
+        text = path.read_text(errors="ignore")
+        assert "AudioContext" not in text, path
+        assert "fx-sound" not in text, path
+
+
+def test_pages_do_not_load_a_sound_module(logged_in):
+    client, _ = logged_in
+    assert "fx/sound.js" not in client.get("/login").get_data(as_text=True)
+    assert "fx/sound.js" not in client.get("/home").get_data(as_text=True)

@@ -1,6 +1,6 @@
 /* MOODIFY motion layer - small inline SVG graphics
  *
- * Icons for the sound toggle and search button, a tiny waveform ornament for
+ * Icon for the search button, a tiny waveform ornament for
  * section kickers, and line illustrations for empty states. All are drawn with
  * currentColor so they follow the mood accent. Nothing here changes page
  * structure: the artwork is added next to existing text, and the original text
@@ -14,14 +14,6 @@
   var STROKE = 'fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"';
 
   var icons = FX.icons = {
-    soundOn:
-      '<svg class="fx-ico-on" viewBox="0 0 24 24" ' + STROKE + ' aria-hidden="true">' +
-      '<path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z" fill="currentColor" fill-opacity=".2"/>' +
-      '<path d="M15.5 9.2a4 4 0 0 1 0 5.6"/><path d="M18.2 6.6a7.6 7.6 0 0 1 0 10.8"/></svg>',
-    soundOff:
-      '<svg class="fx-ico-off" viewBox="0 0 24 24" ' + STROKE + ' aria-hidden="true">' +
-      '<path d="M4 9.5v5h3.2L12 18.5v-13L7.2 9.5H4z" fill="currentColor" fill-opacity=".12"/>' +
-      '<path d="M16 9.5l5 5M21 9.5l-5 5"/></svg>',
     search:
       '<svg class="fx-btn-ico" viewBox="0 0 24 24" ' + STROKE + ' aria-hidden="true">' +
       '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>',
