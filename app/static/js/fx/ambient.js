@@ -24,6 +24,8 @@
     var gsap = global.gsap;
     if (!gsap) return;
     var doc = document;
+    /* The home dashboard has solid surfaces and no aurora (saves GPU and battery). */
+    if (doc.querySelector('.dash')) { FX.ambient = { pulse: function () {} }; return; }
     var reduced = FX.flags.reducedMotion;
     var fine = FX.flags.finePointer;
 
