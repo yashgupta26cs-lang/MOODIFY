@@ -47,7 +47,6 @@
       '.library-create-playlist'
     ].join(',');
     FX.qsa(PRESS).forEach(function (el) {
-      if (el.classList.contains('fx-sound-toggle')) return;
       el.classList.add('fx-press');
     });
 

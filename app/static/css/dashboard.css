@@ -12,7 +12,6 @@ body:has(.dash) > nav.navbar { display: none !important; }
 body:has(.dash) > .container { max-width: none; width: 100%; padding: 0; margin: 0; }
 body:has(.dash) .fx-ambient,
 body:has(.dash) .fx-progress { display: none !important; }
-body:has(.dash) .fx-sound-hint { bottom: 112px; }
 
 /* flash messages become a small toast */
 body:has(.dash) > .container > .alert {
@@ -154,7 +153,6 @@ body:has(.dash) > .container > .alert.bye { opacity: 0; transition: opacity 0.2s
 .dash-pill.on { background: var(--acc); color: var(--ink-on-acc); }
 
 .dash-account { display: flex; align-items: center; gap: 10px; flex: none; margin-left: auto; }
-.dash-account .fx-sound-toggle { width: 38px; height: 38px; background: rgba(0, 0, 0, 0.35); border-color: transparent; }
 .dash-menu { position: relative; }
 .dash-menu summary { list-style: none; cursor: pointer; border-radius: 50%; }
 .dash-menu summary::-webkit-details-marker { display: none; }
@@ -402,7 +400,6 @@ body:has(.dash) > .container > .alert.bye { opacity: 0; transition: opacity 0.2s
   .dash-bottomnav a { display: grid; place-items: center; align-content: center; gap: 2px; color: var(--muted); font-size: 10.5px; font-weight: 650; transition: color 0.15s ease; }
   .dash-bottomnav a svg { width: 22px; height: 22px; }
   .dash-bottomnav a.active { color: var(--acc); }
-  body:has(.dash) .fx-sound-hint { bottom: 150px; }
 }
 
 /* touch screens have no hover: keep the play buttons visible */

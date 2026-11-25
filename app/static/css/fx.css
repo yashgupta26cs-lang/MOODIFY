@@ -286,29 +286,6 @@ html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
   will-change: transform;
 }
 
-/* ---- Sound toggle ---------------------------------------------------------- */
-.fx-sound-toggle {
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  display: inline-grid;
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--fx-line-strong);
-  border-radius: 50%;
-  color: #cfe6df;
-  background: rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: color 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.45s var(--fx-spring);
-}
-.fx-sound-toggle:hover { color: var(--fx-accent); border-color: rgba(var(--fx-accent-rgb), 0.6); }
-.fx-sound-toggle:active { transform: scale(0.92); }
-.fx-sound-toggle svg { width: 18px; height: 18px; display: block; }
-.fx-sound-toggle .fx-ico-off { display: none; }
-.fx-sound-toggle[aria-pressed="false"] { color: #8da5a4; }
-.fx-sound-toggle[aria-pressed="false"] .fx-ico-on { display: none; }
-.fx-sound-toggle[aria-pressed="false"] .fx-ico-off { display: block; }
-.fx-sound-floating { position: fixed; right: 16px; top: 16px; z-index: 9990; background: rgba(7, 20, 27, 0.7); }
 .fx-header-cluster { display: flex; align-items: center; gap: 14px; }
 
 /* ---- Small SVG ornaments --------------------------------------------------- */
@@ -333,6 +310,6 @@ html.lenis, html.lenis body { height: auto; }
 
 /* ---- Reduced motion ---------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
-  .fx-press, .fx-tilt, .fx-sound-toggle { transition-duration: 0.01ms !important; }
+  .fx-press, .fx-tilt { transition-duration: 0.01ms !important; }
   .fx-spotlight, .fx-cursor, .fx-progress { display: none !important; }
 }
