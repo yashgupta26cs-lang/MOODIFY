@@ -1,14 +1,17 @@
 
 """Main application routes"""
 
+from collections import Counter
 from datetime import datetime, timezone
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, abort
+from flask import (
+    Blueprint, render_template, request, redirect, url_for, flash, abort, jsonify,
+)
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from . import db
-from .models import Music, Playlist, PlaylistCatalogTrack, MoodHistory
+from .models import Music, Playlist, PlaylistCatalogTrack, MoodHistory, FavoriteTrack
 from .music_catalog import CATALOG_TRACKS
 
 import random
@@ -16,21 +19,174 @@ import random
 
 main_bp = Blueprint('main', __name__, template_folder='templates')
 
+# The ten moods a person can check in with (the same list the mood check-in accepts).
+CHECKIN_MOODS = [
+    'Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic',
+    'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous',
+]
 
-@main_bp.route('/')
-def index():
-    # Public entry point: open the designed login screen.
-    # The Create Account link on that page opens registration.
-    return redirect(url_for('auth.login'))
+
+# ==========================================
+# SHARED HELPERS
+# ==========================================
+
+def wants_json():
+    """True for the app's own background (fetch) requests that expect JSON back."""
+    return request.headers.get('X-Moodify') == 'json'
 
 
-@main_bp.route('/home')
-@login_required
-def home():
-    # Rank the curated, reusable tracks around each user's saved preferences.
-    favourite_singers = [
+def mood_cards():
+    """Check-in moods first, then any extra mood that a catalogue track uses."""
+    extra = []
+    for track in CATALOG_TRACKS:
+        mood = track.get('mood')
+        if mood and mood not in CHECKIN_MOODS and mood not in extra:
+            extra.append(mood)
+    return CHECKIN_MOODS + extra
+
+
+def track_payload(track):
+    """Everything the player and the Now Playing view need to know about a track."""
+    return {
+        'slug': track['slug'],
+        'id': track.get('id'),
+        'url': url_for('main.listen', slug=track['slug']),
+        'title': track.get('title', ''),
+        'artist': track.get('artist', ''),
+        'composer': track.get('composer', ''),
+        'description': track.get('description', ''),
+        'genre': track.get('genre', ''),
+        'mood': track.get('mood', ''),
+        'language': track.get('language', ''),
+        'duration': track.get('duration', ''),
+        'audio_url': track.get('audio_url', ''),
+        'fallback_audio_url': track.get('fallback_audio_url', ''),
+        'source_url': track.get('source_url', ''),
+        'license_label': track.get('license_label', ''),
+        'license_url': track.get('license_url', ''),
+        'credit': track.get('credit', ''),
+        'art_class': track.get('art_class', ''),
+        'is_instrumental': track.get('is_instrumental', track.get('language', '').casefold() == 'instrumental'),
+        'video_embed_url': track.get('video_embed_url', ''),
+        'lyrics': track.get('lyrics', '') if track.get('lyrics_authorized') else '',
+        'lyrics_authorized': bool(track.get('lyrics_authorized')),
+        'lyrics_credit': track.get('lyrics_credit', ''),
+        'lyrics_source_url': track.get('lyrics_source_url', ''),
+        'karaoke_audio_url': track.get('karaoke_audio_url', '') if track.get('karaoke_authorized') else '',
+        'karaoke_authorized': bool(track.get('karaoke_authorized')),
+    }
+
+
+def _total_duration(tracks):
+    """'12 min' style total for tracks whose duration is written as m:ss."""
+    seconds = 0
+    for track in tracks:
+        try:
+            minutes, secs = str(track.get('duration', '')).split(':')
+            seconds += int(minutes) * 60 + int(secs)
+        except ValueError:
+            continue
+    if not seconds:
+        return ''
+    minutes = round(seconds / 60)
+    return f"{minutes} min" if minutes < 60 else f"{minutes // 60} hr {minutes % 60} min"
+
+
+def _user_playlists():
+    if not current_user.is_authenticated:
+        return []
+    return Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
+
+
+def _favorite_slugs():
+    if not current_user.is_authenticated:
+        return []
+    rows = FavoriteTrack.query.filter_by(user_id=current_user.id).order_by(FavoriteTrack.id.asc()).all()
+    return [row.catalog_slug for row in rows]
+
+
+def _safe_next(value):
+    """Only ever send people back to a path on this site."""
+    if value and value.startswith('/') and not value.startswith('//') and '\\' not in value:
+        return value
+    return None
+
+
+@main_bp.app_context_processor
+def shell_context():
+    """Data every page of the app shell needs: playlists, favourites and the track list."""
+    playlists = _user_playlists()
+    favourites = _favorite_slugs()
+    signed_in = current_user.is_authenticated
+    app_data = {
+        'signedIn': bool(signed_in),
+        'name': (getattr(current_user, 'username', '') or '') if signed_in else '',
+        'current': (getattr(current_user, 'preferred_mood', '') or '') if signed_in else '',
+        'tracks': [
+            {
+                'slug': t['slug'], 'id': t.get('id'), 'title': t.get('title', ''), 'artist': t.get('artist', ''),
+                'composer': t.get('composer', ''), 'genre': t.get('genre', ''), 'mood': t.get('mood', ''),
+                'language': t.get('language', ''), 'duration': t.get('duration', ''),
+                'audio': t.get('audio_url', ''), 'fallback': t.get('fallback_audio_url', ''),
+                'url': url_for('main.listen', slug=t['slug']),
+            }
+            for t in CATALOG_TRACKS
+        ],
+        'playlists': [
+            {
+                'id': pl.id, 'name': pl.name,
+                'slugs': [item.catalog_slug for item in pl.catalog_tracks],
+                'url': url_for('main.playlist_detail', playlist_id=pl.id),
+            }
+            for pl in playlists
+        ],
+        'favorites': favourites,
+        'moods': mood_cards(),
+        'saveable': CHECKIN_MOODS,
+        'urls': {
+            'library': url_for('main.music'),
+            'home': url_for('main.index'),
+            'login': url_for('auth.login'),
+            'register': url_for('auth.register'),
+            'favorite': url_for('main.toggle_favorite'),
+            'playlists': url_for('main.playlist'),
+        },
+    }
+    return {
+        'app_data': app_data,
+        'shell_playlists': playlists,
+        'favorite_slugs': favourites,
+        'checkin_moods': CHECKIN_MOODS,
+    }
+
+
+def unauthorized():
+    """Guests may browse everything public. Pages that save or sync data ask them to sign in."""
+    if wants_json():
+        return jsonify(ok=False, error='Please log in first.', login=True), 401
+    return render_template('gate.html', next_url=request.full_path.rstrip('?')), 401
+
+
+@main_bp.app_errorhandler(404)
+def not_found(error):
+    if wants_json():
+        return jsonify(ok=False, error='Not found.'), 404
+    return render_template('not_found.html'), 404
+
+
+# ==========================================
+# HOME (public landing page)
+# ==========================================
+
+def _render_home():
+    # Rank the curated, reusable tracks around each signed-in user's saved preferences.
+    # Guests simply get the catalogue in its natural order.
+    signed_in = current_user.is_authenticated
+    language = getattr(current_user, 'preferred_language', None) if signed_in else None
+    mood = getattr(current_user, 'preferred_mood', None) if signed_in else None
+    singers = [
         name.strip().casefold()
-        for name in (current_user.favorite_singer or '').split(',')
+        for name in ((getattr(current_user, 'favorite_singer', '') or '') if signed_in else '').split(',')
         if name.strip()
     ]
 
@@ -39,21 +195,34 @@ def home():
 
     def preference_score(song):
         score = 0
-        if contains_preference(song.get('language'), current_user.preferred_language):
+        if contains_preference(song.get('language'), language):
             score += 2
-        if contains_preference(song.get('mood'), current_user.preferred_mood):
+        if contains_preference(song.get('mood'), mood):
             score += 3
         artist_text = f"{song.get('artist', '')} {song.get('composer', '')}".casefold()
-        if any(singer in artist_text for singer in favourite_singers):
+        if any(singer in artist_text for singer in singers):
             score += 3
-        return score, song['id']
+        return -score, song['id']
 
-    songs = sorted(CATALOG_TRACKS, key=preference_score, reverse=True)[:6]
+    ranked = sorted(CATALOG_TRACKS, key=preference_score)
+    return render_template(
+        'home.html',
+        songs=ranked[:6],
+        all_tracks=ranked,
+        playlists=_user_playlists(),
+        moods=mood_cards(),
+    )
 
-    # The dashboard also shows every catalogue track and the user's own playlists
-    # in one place (additive: 'songs' is unchanged for anything that still uses it).
-    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
-    return render_template('home.html', songs=songs, all_tracks=CATALOG_TRACKS, playlists=playlists)
+
+@main_bp.route('/')
+def index():
+    return _render_home()
+
+
+@main_bp.route('/home')
+def home():
+    # Kept so older links and bookmarks still work.
+    return _render_home()
 
 
 @main_bp.route('/mood-checkin', methods=['POST'])
@@ -61,14 +230,11 @@ def home():
 def mood_checkin():
     mood = request.form.get('mood', '').strip()
 
-    allowed_moods = {
-        'Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic',
-        'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous'
-    }
-
-    if mood not in allowed_moods:
+    if mood not in CHECKIN_MOODS:
+        if wants_json():
+            return jsonify(ok=False, error='Please choose a mood from the list.'), 400
         flash('Please choose a mood from the list.')
-        return redirect(url_for('main.home'))
+        return redirect(url_for('main.index'))
 
     current_user.preferred_mood = mood
 
@@ -81,12 +247,13 @@ def mood_checkin():
     db.session.add(mood_entry)
     db.session.commit()
 
+    if wants_json():
+        return jsonify(ok=True, mood=mood, message='Mood saved: ' + mood + '. Your mix will adapt.')
     flash('Your mood has been updated. Your music mix will adapt!')
-    return redirect(url_for('main.home'))
+    return redirect(url_for('main.index'))
 
 
 @main_bp.route('/music', methods=['GET'])
-@login_required
 def music():
     language = request.args.get('language', '').strip().casefold()
     mood = request.args.get('mood', '').strip().casefold()
@@ -117,42 +284,27 @@ def music():
 
         songs.append(song)
 
-    playlists = Playlist.query.filter_by(user_id=current_user.id).order_by(Playlist.name.asc()).all()
-    return render_template('music.html', songs=songs, playlists=playlists)
+    return render_template(
+        'music.html',
+        songs=songs,
+        playlists=_user_playlists(),
+        all_tracks=CATALOG_TRACKS,
+        moods=mood_cards(),
+        languages=sorted({t.get('language') for t in CATALOG_TRACKS if t.get('language')}),
+        genres=sorted({t.get('genre') for t in CATALOG_TRACKS if t.get('genre')}),
+        filters={
+            'q': request.args.get('q', '').strip(),
+            'language': request.args.get('language', '').strip(),
+            'mood': request.args.get('mood', '').strip(),
+            'genre': request.args.get('genre', '').strip(),
+            'singer': request.args.get('singer', '').strip(),
+        },
+    )
 
 
-def _render_catalog_track(song, queue_catalog_tracks=None):
+def _render_catalog_track(song, queue_catalog_tracks=None, autoplay=None):
     queue_source = queue_catalog_tracks if queue_catalog_tracks is not None else CATALOG_TRACKS
-    queue_tracks = [
-        {
-            'slug': track['slug'],
-            'url': url_for('main.listen', slug=track['slug']),
-            'title': track.get('title', ''),
-            'artist': track.get('artist', ''),
-            'composer': track.get('composer', ''),
-            'description': track.get('description', ''),
-            'genre': track.get('genre', ''),
-            'mood': track.get('mood', ''),
-            'language': track.get('language', ''),
-            'duration': track.get('duration', ''),
-            'audio_url': track.get('audio_url', ''),
-            'fallback_audio_url': track.get('fallback_audio_url', ''),
-            'source_url': track.get('source_url', ''),
-            'license_label': track.get('license_label', ''),
-            'license_url': track.get('license_url', ''),
-            'credit': track.get('credit', ''),
-            'art_class': track.get('art_class', ''),
-            'is_instrumental': track.get('is_instrumental', track.get('language', '').casefold() == 'instrumental'),
-            'video_embed_url': track.get('video_embed_url', ''),
-            'lyrics': track.get('lyrics', '') if track.get('lyrics_authorized') else '',
-            'lyrics_authorized': bool(track.get('lyrics_authorized')),
-            'lyrics_credit': track.get('lyrics_credit', ''),
-            'lyrics_source_url': track.get('lyrics_source_url', ''),
-            'karaoke_audio_url': track.get('karaoke_audio_url', '') if track.get('karaoke_authorized') else '',
-            'karaoke_authorized': bool(track.get('karaoke_authorized')),
-        }
-        for track in queue_source
-    ]
+    queue_tracks = [track_payload(track) for track in queue_source]
     current_track_index = next(
         (index for index, track in enumerate(queue_source) if track['slug'] == song['slug']),
         0,
@@ -168,11 +320,11 @@ def _render_catalog_track(song, queue_catalog_tracks=None):
         credit=song.get('credit'),
         queue_tracks=queue_tracks,
         current_track_index=current_track_index,
+        autoplay=bool(request.args.get('autoplay')) if autoplay is None else autoplay,
     )
 
 
 @main_bp.route('/listen/<slug>')
-@login_required
 def listen(slug):
     song = next((track for track in CATALOG_TRACKS if track['slug'] == slug), None)
     if song is None:
@@ -181,7 +333,6 @@ def listen(slug):
 
 
 @main_bp.route('/play/<int:music_id>')
-@login_required
 def play(music_id):
     # Curated catalogue IDs are used by Home and the Music Library.
     catalog_song = next((track for track in CATALOG_TRACKS if track['id'] == music_id), None)
@@ -200,8 +351,17 @@ def play(music_id):
         license_label=None,
         license_url=None,
         credit=None,
-        queue_tracks=[],
+        queue_tracks=[{
+            'slug': 'music-%s' % song.id, 'id': song.id, 'url': url_for('main.play', music_id=song.id),
+            'title': getattr(song, 'title', '') or 'MOODIFY track', 'artist': getattr(song, 'artist', '') or '',
+            'composer': '', 'description': '', 'genre': '', 'mood': '', 'language': '', 'duration': '',
+            'audio_url': audio_url or '', 'fallback_audio_url': '', 'source_url': '', 'license_label': '',
+            'license_url': '', 'credit': '', 'art_class': '', 'is_instrumental': False, 'video_embed_url': '',
+            'lyrics': '', 'lyrics_authorized': False, 'lyrics_credit': '', 'lyrics_source_url': '',
+            'karaoke_audio_url': '', 'karaoke_authorized': False,
+        }],
         current_track_index=0,
+        autoplay=False,
     )
 
 
@@ -249,6 +409,7 @@ def playlist_detail(playlist_id):
         playlist=selected_playlist,
         playlist_tracks=playlist_tracks,
         catalog_tracks=CATALOG_TRACKS,
+        total_label=_total_duration([row['song'] for row in playlist_tracks]),
     )
 
 
@@ -265,14 +426,17 @@ def add_to_playlist(playlist_id):
         playlist_id=selected_playlist.id, catalog_slug=slug
     ).first()
     if existing:
-        flash('That track is already in this playlist.')
+        message, added = 'That track is already in this playlist.', False
     else:
         db.session.add(PlaylistCatalogTrack(
             playlist_id=selected_playlist.id,
             catalog_slug=slug,
         ))
         db.session.commit()
-        flash('Track added to your playlist.')
+        message, added = 'Track added to your playlist.', True
+    if wants_json():
+        return jsonify(ok=True, added=added, message=message, playlist=selected_playlist.id, slug=slug)
+    flash(message)
     return redirect(url_for('main.playlist_detail', playlist_id=selected_playlist.id))
 
 
@@ -318,7 +482,7 @@ def play_playlist(playlist_id):
     if not queue:
         flash('Add at least one track before playing this playlist.')
         return redirect(url_for('main.playlist_detail', playlist_id=selected_playlist.id))
-    return _render_catalog_track(queue[0], queue_catalog_tracks=queue)
+    return _render_catalog_track(queue[0], queue_catalog_tracks=queue, autoplay=True)
 
 
 @main_bp.route('/mood_history')
@@ -359,7 +523,12 @@ def moodometer():
 @main_bp.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html')
+    return render_template(
+        'profile.html',
+        playlist_count=Playlist.query.filter_by(user_id=current_user.id).count(),
+        favorite_count=FavoriteTrack.query.filter_by(user_id=current_user.id).count(),
+        checkin_count=MoodHistory.query.filter_by(user_id=current_user.id).count(),
+    )
 
 
 @main_bp.route('/recommendations')
@@ -440,6 +609,11 @@ def recommendations():
 # MOODIFY PERSONAL PREFERENCE SETUP
 # ==========================================
 
+SETUP_LANGUAGES = [
+    'Telugu', 'Hindi', 'English', 'Tamil', 'Kannada', 'Malayalam',
+    'Bengali', 'Marathi', 'Punjabi', 'Urdu', 'Other',
+]
+
 @main_bp.route('/setup', methods=['GET', 'POST'])
 @login_required
 def setup():
@@ -474,7 +648,59 @@ def setup():
 
         flash('Your music preferences have been saved successfully!')
 
-        return redirect(url_for('main.home'))
+        return redirect(url_for('main.index'))
 
-    return render_template('setup.html')
+    return render_template('setup.html', languages=SETUP_LANGUAGES)
 
+
+
+# ==========================================
+# MOOD PAGES (public)
+# ==========================================
+
+@main_bp.route('/moods')
+def moods():
+    counts = Counter((track.get('mood') or '') for track in CATALOG_TRACKS)
+    return render_template('moods.html', moods=mood_cards(), mood_counts=counts)
+
+
+@main_bp.route('/mood/<name>')
+def mood_page(name):
+    chosen = next((m for m in mood_cards() if m.casefold() == name.casefold()), None)
+    if chosen is None:
+        abort(404)
+    tracks = [t for t in CATALOG_TRACKS if (t.get('mood') or '').casefold() == chosen.casefold()]
+    return render_template('mood.html', mood=chosen, tracks=tracks, moods=mood_cards())
+
+
+# ==========================================
+# FAVOURITES (additive feature: heart a track to find it again)
+# ==========================================
+
+@main_bp.route('/favorites')
+@login_required
+def favorites():
+    lookup = {track['slug']: track for track in CATALOG_TRACKS}
+    saved = [lookup[slug] for slug in _favorite_slugs() if slug in lookup]
+    return render_template('favorites.html', tracks=saved, playlists=_user_playlists())
+
+
+@main_bp.route('/favorites/toggle', methods=['POST'])
+@login_required
+def toggle_favorite():
+    slug = request.form.get('slug', '').strip()
+    if not any(track['slug'] == slug for track in CATALOG_TRACKS):
+        abort(404)
+    existing = FavoriteTrack.query.filter_by(user_id=current_user.id, catalog_slug=slug).first()
+    if existing:
+        db.session.delete(existing)
+        favorite = False
+    else:
+        db.session.add(FavoriteTrack(user_id=current_user.id, catalog_slug=slug))
+        favorite = True
+    db.session.commit()
+    message = 'Added to your favourites.' if favorite else 'Removed from your favourites.'
+    if wants_json():
+        return jsonify(ok=True, favorite=favorite, slug=slug, message=message, favorites=_favorite_slugs())
+    flash(message)
+    return redirect(_safe_next(request.form.get('next')) or url_for('main.favorites'))

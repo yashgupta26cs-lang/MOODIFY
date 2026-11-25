@@ -3,8 +3,8 @@
 
 import re
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import login_user, logout_user, login_required
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask_login import login_user, logout_user, current_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -13,6 +13,33 @@ from .models import User
 
 
 auth_bp = Blueprint('auth', __name__, template_folder='templates')
+
+
+def _wants_json():
+    # The sign-in pop-up posts in the background and asks for JSON instead of a redirect.
+    return request.headers.get('X-Moodify') == 'json'
+
+
+def _safe_next(value):
+    if value and value.startswith('/') and not value.startswith('//') and '\\' not in value:
+        return value
+    return None
+
+
+def _fail(message, endpoint):
+    if _wants_json():
+        return jsonify(ok=False, error=message), 400
+    flash(message)
+    return redirect(url_for(endpoint, next=_safe_next(request.form.get('next'))))
+
+
+def _done(default_endpoint, flash_message):
+    flash(flash_message)
+    target = _safe_next(request.form.get('next')) if default_endpoint == 'main.index' else None
+    target = target or url_for(default_endpoint)
+    if _wants_json():
+        return jsonify(ok=True, redirect=target)
+    return redirect(target)
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -26,28 +53,22 @@ def register():
         password = request.form.get('password', '')
 
         if not all([username, email, mobile, password]):
-            flash('Please complete all registration fields.')
-            return redirect(url_for('auth.register'))
+            return _fail('Please complete all registration fields.', 'auth.register')
 
         if not re.fullmatch(r'\+?[0-9]{10,15}', mobile):
-            flash('Please enter a valid mobile number.')
-            return redirect(url_for('auth.register'))
+            return _fail('Please enter a valid mobile number.', 'auth.register')
 
         if len(password) < 8:
-            flash('Password must contain at least 8 characters.')
-            return redirect(url_for('auth.register'))
+            return _fail('Password must contain at least 8 characters.', 'auth.register')
 
         if User.query.filter_by(username=username).first():
-            flash('This username is already taken.')
-            return redirect(url_for('auth.register'))
+            return _fail('This username is already taken.', 'auth.register')
 
         if User.query.filter_by(email=email).first():
-            flash('An account with this email already exists.')
-            return redirect(url_for('auth.register'))
+            return _fail('An account with this email already exists.', 'auth.register')
 
         if User.query.filter_by(mobile=mobile).first():
-            flash('An account with this mobile number already exists.')
-            return redirect(url_for('auth.register'))
+            return _fail('An account with this mobile number already exists.', 'auth.register')
 
         new_user = User(
             username=username,
@@ -62,16 +83,15 @@ def register():
 
         except IntegrityError:
             db.session.rollback()
-            flash('These account details are already registered.')
-            return redirect(url_for('auth.register'))
+            return _fail('These account details are already registered.', 'auth.register')
 
         login_user(new_user)
 
-        flash('Account created successfully! Now personalise your MOODIFY.')
+        return _done('main.setup', 'Account created successfully! Now personalise your MOODIFY.')
 
-        return redirect(url_for('main.setup'))
-
-    return render_template('register.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    return render_template('auth.html', mode='register', next_url=_safe_next(request.args.get('next')))
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -88,29 +108,27 @@ def login():
 
             login_user(user)
 
-            flash('Logged in successfully!')
-
             if not all([
                 user.preferred_language,
                 user.preferred_mood,
                 user.favorite_singer
             ]):
-                return redirect(url_for('main.setup'))
+                return _done('main.setup', 'Logged in successfully!')
 
-            return redirect(url_for('main.home'))
+            return _done('main.index', 'Logged in successfully!')
 
-        flash('Invalid email or password.')
-        return redirect(url_for('auth.login'))
+        return _fail('Invalid email or password.', 'auth.login')
 
-    return render_template('login.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    return render_template('auth.html', mode='login', next_url=_safe_next(request.args.get('next')))
 
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
 
     logout_user()
 
     flash('You have been logged out.')
 
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('main.index'))

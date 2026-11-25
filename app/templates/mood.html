@@ -1,0 +1,41 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% from '_cards.html' import track_table %}
+{% set page_id = 'mood' %}
+{% set nav = 'moods' %}
+{% set taglines = {
+  'Happy': 'Bright, bouncy and made for good days.',
+  'Relaxed': 'Slow the pace and let the evening settle.',
+  'Calm': 'Quiet, gentle music for a still mind.',
+  'Energetic': 'Fast and driving, for when you need to move.',
+  'Romantic': 'Warm, tender sounds for close moments.',
+  'Sad': 'Space to feel it, with music that understands.',
+  'Motivational': 'Music that pushes you to start and keep going.',
+  'Focused': 'Steady sound that helps the work flow.',
+  'Nostalgic': 'Old favourites and long-ago feelings.',
+  'Adventurous': 'Big, open sounds for a bold day.',
+  'Reflective': 'Thoughtful, unhurried pieces for looking inward.'
+} %}
+{% block title %}{{ mood }} music | MOODIFY{% endblock %}
+{% block page %}
+<a class="back-link" href="{{ url_for('main.moods') }}">{{ ico('back') }}<span>All moods</span></a>
+<section class="detail-hero mood-hero" data-mood="{{ mood }}">
+  <div class="detail-art"><span class="dash-mood-ico" data-glyph="{{ mood }}"></span></div>
+  <div class="detail-copy">
+    <span class="kicker">Mood</span>
+    <h1>{{ mood }}</h1>
+    <p>{{ taglines.get(mood, 'A page of music chosen for this mood.') }} · {{ tracks|length }} track{{ '' if tracks|length == 1 else 's' }}</p>
+    <div class="detail-actions">
+      {% if tracks %}<button type="button" class="dash-btn primary big" data-play-all><span>{{ ico('play') }}Play all</span></button>{% endif %}
+      {% if mood in checkin_moods %}<button type="button" class="dash-btn" data-save-mood="{{ mood }}"><span>{{ ico('check') }}Set as my mood</span></button>{% endif %}
+    </div>
+  </div>
+</section>
+{{ track_table(tracks, favorite_slugs, 'No tracks are tagged ' ~ mood ~ ' yet. New licensed music is added over time.') }}
+<section class="dash-section">
+  <div class="dash-head"><div><h2>More moods</h2></div></div>
+  <div class="chip-row">
+    {% for m in moods if m != mood %}<a class="dash-chip" href="{{ url_for('main.mood_page', name=m) }}"><span>{{ m }}</span></a>{% endfor %}
+  </div>
+</section>
+{% endblock %}

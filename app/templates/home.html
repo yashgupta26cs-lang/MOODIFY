@@ -1,303 +1,132 @@
-{% extends 'base.html' %}
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% from '_cards.html' import track_card, playlist_card %}
+{% set page_id = 'home' %}
+{% set nav = 'home' %}
 {% block title %}MOODIFY | Your sound, your mood{% endblock %}
-{% block head_extra %}<link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">{% endblock %}
-{% block content %}
+{% block page %}
+{% set signed_in = current_user.is_authenticated %}
+<span id="top"></span>
 
-{# Mood cards: the ten check-in moods first, then any extra mood used by the catalogue. #}
-{% set checkin_moods = ['Happy', 'Relaxed', 'Calm', 'Energetic', 'Romantic', 'Sad', 'Motivational', 'Focused', 'Nostalgic', 'Adventurous'] %}
-{% set ns = namespace(extra=[]) %}
-{% for t in all_tracks %}
-  {% if t.mood and t.mood not in checkin_moods and t.mood not in ns.extra %}{% set ns.extra = ns.extra + [t.mood] %}{% endif %}
-{% endfor %}
-{% set mood_cards = checkin_moods + ns.extra %}
-{% set picked_ids = songs | map(attribute='id') | list %}
+{# ---------- Welcome ---------- #}
+<section class="dash-welcome">
+  <div>
+    {% if signed_in %}
+    <h1>Hey, {{ current_user.username }}</h1>
+    <p>
+      {% if current_user.preferred_mood %}Your current mood is <strong id="curMoodText">{{ current_user.preferred_mood }}</strong>. Pick a mood below to tune your music.
+      {% else %}Pick a mood below and MOODIFY will tune your music to it.{% endif %}
+    </p>
+    {% else %}
+    <h1>Music for every mood</h1>
+    <p>Pick how you feel and MOODIFY finds the music. Browse freely as a guest, and log in when you want to save playlists and favourites.</p>
+    {% endif %}
+  </div>
+  {% if signed_in %}
+  <div class="dash-taste" aria-label="Your taste">
+    <a href="{{ url_for('main.music', language=current_user.preferred_language) }}"><small>Language</small><strong>{{ current_user.preferred_language or 'Choose one' }}</strong></a>
+    <a href="{{ url_for('main.music', singer=current_user.favorite_singer) }}"><small>Favourite artist</small><strong>{{ current_user.favorite_singer or 'Add one' }}</strong></a>
+  </div>
+  {% endif %}
+</section>
 
-{% macro ico(name) -%}
-{%- if name == 'home' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.8 12 3.8l8.5 7v9.4a.8.8 0 0 1-.8.8H14.5v-6h-5v6H4.300a.8.8 0 0 1-.8-.8z"/></svg>
-{%- elif name == 'moods' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.500"/><path d="M8.600 14.200c.9 1.300 2.100 2 3.400 2s2.500-.7 3.400-2"/><path d="M9 9.800h.01M15 9.800h.01"/></svg>
-{%- elif name == 'playlists' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.500h11M4 11.500h11M4 16.500h6"/><path d="M18.500 14.500v-8l2.500 1.200"/><circle cx="16.500" cy="16.800" r="2.200"/></svg>
-{%- elif name == 'library' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.500v15M10 4.500v15"/><path d="m14.500 5.300 4.600-1 2.400 14.600-4.600 1z"/></svg>
-{%- elif name == 'journal' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18.500 9 12l3.500 3.500L20 6.500"/><path d="M15 6.500h5v5"/></svg>
-{%- elif name == 'recs' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3.500 2.400 5.100 5.600.7-4.100 3.900 1 5.500L12 15.900 7.100 18.700l1-5.500L4 9.300l5.600-.7z"/></svg>
-{%- elif name == 'user' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.500" r="3.800"/><path d="M4.500 20c.8-3.700 3.600-5.600 7.500-5.600s6.700 1.900 7.500 5.600"/></svg>
-{%- elif name == 'search' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.500"/><path d="m16 16 4.500 4.500"/></svg>
-{%- elif name == 'plus' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-{%- elif name == 'play' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M8 5.200v13.600a.8.8 0 0 0 1.200.7l10.800-6.800a.8.8 0 0 0 0-1.400L9.200 4.500A.8.8 0 0 0 8 5.200z"/></svg>
-{%- elif name == 'pause' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><rect x="6.500" y="5" width="3.800" height="14" rx="1.200"/><rect x="13.700" y="5" width="3.800" height="14" rx="1.200"/></svg>
-{%- elif name == 'prev' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M6 5h2v14H6z"/><path d="M19 5.800v12.400a.6.6 0 0 1-.9.5L9.800 12.500a.6.6 0 0 1 0-1z"/></svg>
-{%- elif name == 'next' -%}<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M16 5h2v14h-2z"/><path d="M5 5.800v12.400a.6.6 0 0 0 .9.5l8.300-6.200a.6.6 0 0 0 0-1L5.900 5.300a.6.6 0 0 0-.9.500z"/></svg>
-{%- elif name == 'volume' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18 6.500a7.700 7.700 0 0 1 0 11"/></svg>
-{%- elif name == 'expand' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4.500h5.500V10M10 19.500H4.500V14M19.500 4.500 13 11M4.500 19.500 11 13"/></svg>
-{%- elif name == 'check' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.500 4.500 4.500L19 7.500"/></svg>
-{%- elif name == 'close' -%}<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
-{%- endif -%}
-{%- endmacro %}
-
-<div class="dash" id="dash" data-current-mood="{{ current_user.preferred_mood or '' }}">
-
-  {# ============================ LEFT SIDEBAR ============================ #}
-  <aside class="dash-side" aria-label="Main">
-    <div class="dash-panel dash-nav-panel">
-      <a href="{{ url_for('main.home') }}" class="dash-brand" aria-label="MOODIFY home">
-        <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <span class="dash-brand-word">MOODIFY</span>
-      </a>
-      <nav class="dash-nav" aria-label="Sections">
-        <a href="#top" class="active" data-jump="top">{{ ico('home') }}<span>Home</span></a>
-        <a href="#moods" data-jump="moods">{{ ico('moods') }}<span>Moods</span></a>
-        <a href="#playlists" data-jump="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
-        <a href="{{ url_for('main.music') }}">{{ ico('library') }}<span>Library</span></a>
-        <a href="{{ url_for('main.moodometer') }}">{{ ico('journal') }}<span>Mood journal</span></a>
-        <a href="{{ url_for('main.recommendations') }}">{{ ico('recs') }}<span>Recommendations</span></a>
-      </nav>
+{# ---------- Mood selector ---------- #}
+<section class="dash-section" id="moods" aria-labelledby="moodsTitle">
+  <div class="dash-head">
+    <div>
+      <h2 id="moodsTitle">How are you feeling?</h2>
+      <p>Tap a mood to filter the music instantly.{% if signed_in %} Save it to update your mood journal.{% endif %}</p>
     </div>
-
-    <div class="dash-panel dash-lists-panel">
-      <div class="dash-panel-head">
-        <span>Your playlists</span>
-        <button type="button" class="dash-icon-btn" id="newPlaylistSide" aria-label="Create a playlist" title="Create a playlist">{{ ico('plus') }}</button>
-      </div>
-      <div class="dash-side-lists" id="sideLists">
-        {% for pl in playlists %}
-        <button type="button" class="dash-side-item" data-playlist="{{ pl.id }}">
-          <span class="dash-side-cover" data-cover="{{ pl.name }}"></span>
-          <span class="dash-side-copy"><strong>{{ pl.name }}</strong><small>{{ pl.catalog_tracks|length }} track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</small></span>
-        </button>
-        {% else %}
-        <p class="dash-side-empty">No playlists yet. Make one and fill it with tracks you love.</p>
-        {% endfor %}
-      </div>
-    </div>
-  </aside>
-
-  {# ============================ TOP BAR + WORKSPACE ============================ #}
-  <div class="dash-main">
-    <header class="dash-top">
-      <form class="dash-search" id="dashSearch" role="search" method="GET" action="{{ url_for('main.music') }}">
-        <span class="dash-search-ico">{{ ico('search') }}</span>
-        <input type="search" name="q" id="dashQuery" placeholder="Search songs, artists, genres or moods" autocomplete="off" aria-label="Search songs, artists, genres or moods">
-        <button type="button" class="dash-search-clear" id="dashQueryClear" aria-label="Clear search" hidden>{{ ico('close') }}</button>
-      </form>
-
-      <div class="dash-pills" id="dashPills" role="toolbar" aria-label="Quick mood filter">
-        <button type="button" class="dash-pill on" data-mood="">All</button>
-        {% for m in mood_cards %}<button type="button" class="dash-pill" data-mood="{{ m }}">{{ m }}</button>{% endfor %}
-      </div>
-
-      <div class="dash-account">
-        <details class="dash-menu">
-          <summary aria-label="Account menu"><span class="dash-avatar">{{ (current_user.username or 'M')[0]|upper }}</span></summary>
-          <div class="dash-menu-pop">
-            <div class="dash-menu-who"><strong>{{ current_user.username }}</strong><small>Your listening space</small></div>
-            <a href="{{ url_for('main.profile') }}">Profile</a>
-            <a href="{{ url_for('main.setup') }}">Edit preferences</a>
-            <a href="{{ url_for('auth.logout') }}">Log out</a>
-          </div>
-        </details>
-      </div>
-    </header>
-
-    <main class="dash-work" id="dashWork" tabindex="-1">
-      <div class="dash-inner" id="dashInner">
-        <span id="top"></span>
-
-        {# ---------- Welcome ---------- #}
-        <section class="dash-welcome">
-          <div>
-            <h1>Hey, {{ current_user.username }}</h1>
-            <p>
-              {% if current_user.preferred_mood %}Your current mood is <strong id="curMoodText">{{ current_user.preferred_mood }}</strong>. Pick a mood below to tune your music.
-              {% else %}Pick a mood below and MOODIFY will tune your music to it.{% endif %}
-            </p>
-          </div>
-          <div class="dash-taste" aria-label="Your taste">
-            <a href="{{ url_for('main.music', language=current_user.preferred_language) }}"><small>Language</small><strong>{{ current_user.preferred_language or 'Choose one' }}</strong></a>
-            <a href="{{ url_for('main.music', singer=current_user.favorite_singer) }}"><small>Favourite artist</small><strong>{{ current_user.favorite_singer or 'Add one' }}</strong></a>
-          </div>
-        </section>
-
-        {# ---------- Mood selector ---------- #}
-        <section class="dash-section" id="moods" aria-labelledby="moodsTitle">
-          <div class="dash-head">
-            <div>
-              <h2 id="moodsTitle">How are you feeling?</h2>
-              <p>Tap a mood to filter the music instantly. Save it to update your mood journal.</p>
-            </div>
-          </div>
-          <div class="dash-moods" id="moodGrid" role="radiogroup" aria-labelledby="moodsTitle">
-            {% for m in mood_cards %}
-            <button type="button" class="dash-mood" role="radio" aria-checked="false" data-mood="{{ m }}">
-              <span class="dash-mood-ico" data-glyph="{{ m }}"></span>
-              <span class="dash-mood-name">{{ m }}</span>
-              <span class="dash-mood-tag" data-current-tag hidden>Current</span>
-            </button>
-            {% endfor %}
-          </div>
-
-          <form class="dash-save" id="moodForm" method="POST" action="{{ url_for('main.mood_checkin') }}" hidden>
-            <input type="hidden" name="mood" id="moodInput" value="">
-            <span class="dash-save-text">Set <strong id="saveMoodName"></strong> as your current mood?</span>
-            <button type="submit" class="dash-btn primary" id="saveMoodBtn">{{ ico('check') }}<span>Save mood check-in</span></button>
-          </form>
-          <noscript>
-            <form class="dash-save" method="POST" action="{{ url_for('main.mood_checkin') }}" style="display:flex">
-              <select name="mood" aria-label="Mood">{% for m in checkin_moods %}<option value="{{ m }}" {% if current_user.preferred_mood == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
-              <button type="submit" class="dash-btn primary"><span>Save mood check-in</span></button>
-            </form>
-          </noscript>
-        </section>
-
-        {# ---------- Tracks ---------- #}
-        <section class="dash-section" id="tracks" aria-labelledby="tracksTitle">
-          <div class="dash-head">
-            <div>
-              <h2 id="tracksTitle">Picked for your vibe</h2>
-              <p id="tracksSub">Ranked around your language, favourite artist and mood.</p>
-            </div>
-            <div class="dash-head-actions">
-              <button type="button" class="dash-chip" id="clearFilters" hidden>{{ ico('close') }}<span>Clear filter</span></button>
-              <a class="dash-link" id="allResults" href="{{ url_for('main.music') }}" hidden>See all results in Library &rarr;</a>
-              <a class="dash-link" id="libraryLink" href="{{ url_for('main.music') }}">Open Library &rarr;</a>
-            </div>
-          </div>
-          <div class="dash-grid" id="trackGrid" aria-live="polite">
-            {% for t in all_tracks %}
-            <article class="dash-card" data-slug="{{ t.slug }}">
-              <div class="dash-cover" data-cover="{{ t.title }}" data-cover-mood="{{ t.mood }}">
-                <button type="button" class="dash-play" aria-label="Play {{ t.title }}">{{ ico('play') }}</button>
-              </div>
-              <div class="dash-card-copy">
-                <a class="dash-card-title" href="{{ url_for('main.listen', slug=t.slug) }}">{{ t.title }}</a>
-                <p>{{ t.artist }}</p>
-                <div class="dash-tags"><span>{{ t.mood }}</span><span>{{ t.genre }}</span><span>{{ t.duration }}</span></div>
-              </div>
-            </article>
-            {% else %}
-            <div class="dash-empty"><strong>Your music shelf is waiting.</strong>Tracks will appear here once they are added to the library.</div>
-            {% endfor %}
-          </div>
-          <div class="dash-empty" id="trackEmpty" hidden></div>
-        </section>
-
-        {# ---------- Playlists ---------- #}
-        <section class="dash-section" id="playlists" aria-labelledby="plTitle">
-          <div class="dash-head">
-            <div>
-              <h2 id="plTitle">Your playlists</h2>
-              <p>Open one to see its tracks here, or press play to start listening.</p>
-            </div>
-            <div class="dash-head-actions">
-              <button type="button" class="dash-chip" id="newPlaylistBtn">{{ ico('plus') }}<span>New playlist</span></button>
-              <a class="dash-link" href="{{ url_for('main.playlist') }}">Manage playlists &rarr;</a>
-            </div>
-          </div>
-          <form class="dash-newpl" id="newPlaylistForm" method="POST" action="{{ url_for('main.create_playlist') }}" hidden>
-            <input type="text" name="name" id="newPlaylistName" maxlength="150" placeholder="Name your playlist" aria-label="Playlist name" required>
-            <button type="submit" class="dash-btn primary"><span>Create</span></button>
-            <button type="button" class="dash-btn" id="newPlaylistCancel"><span>Cancel</span></button>
-          </form>
-          <div class="dash-grid" id="plGrid">
-            {% for pl in playlists %}
-            <article class="dash-card" data-playlist-card="{{ pl.id }}">
-              <div class="dash-cover" data-cover="{{ pl.name }}">
-                <button type="button" class="dash-play" aria-label="Play {{ pl.name }}">{{ ico('play') }}</button>
-              </div>
-              <div class="dash-card-copy">
-                <button type="button" class="dash-card-title as-button" data-open-playlist="{{ pl.id }}">{{ pl.name }}</button>
-                <p>{{ pl.catalog_tracks|length }} saved track{{ '' if pl.catalog_tracks|length == 1 else 's' }}</p>
-              </div>
-            </article>
-            {% else %}
-            <div class="dash-empty"><strong>No playlists yet.</strong>Create one with the button above, then add tracks from the library.</div>
-            {% endfor %}
-          </div>
-        </section>
-
-        {# ---------- Tools ---------- #}
-        <section class="dash-section" id="tools" aria-labelledby="toolsTitle">
-          <div class="dash-head"><div><h2 id="toolsTitle">Your tools</h2><p>Everything else in MOODIFY, one click away.</p></div></div>
-          <div class="dash-tools">
-            <a href="{{ url_for('main.recommendations') }}" class="dash-tool">{{ ico('recs') }}<span><strong>Recommendations</strong><small>A mix ranked from your profile and check-ins</small></span></a>
-            <a href="{{ url_for('main.moodometer') }}" class="dash-tool">{{ ico('journal') }}<span><strong>Mood journal</strong><small>Your mood timeline and stats</small></span></a>
-            <a href="{{ url_for('main.music') }}" class="dash-tool">{{ ico('library') }}<span><strong>Music library</strong><small>Search and filter every track</small></span></a>
-            <a href="{{ url_for('main.setup') }}" class="dash-tool">{{ ico('user') }}<span><strong>Preferences</strong><small>Language, favourite artist and mood</small></span></a>
-          </div>
-        </section>
-
-        <footer class="dash-foot">Your music · Your mood · Your MOODIFY</footer>
-      </div>
-    </main>
+    <div class="dash-head-actions"><a class="dash-link" href="{{ url_for('main.moods') }}">All mood pages &rarr;</a></div>
+  </div>
+  <div class="dash-moods" id="moodGrid" role="radiogroup" aria-labelledby="moodsTitle">
+    {% for m in moods %}
+    <button type="button" class="dash-mood" role="radio" aria-checked="false" data-mood="{{ m }}">
+      <span class="dash-mood-ico" data-glyph="{{ m }}"></span>
+      <span class="dash-mood-name">{{ m }}</span>
+      <span class="dash-mood-tag" data-current-tag hidden>Current</span>
+    </button>
+    {% endfor %}
   </div>
 
-  {# ============================ BOTTOM PLAYER ============================ #}
-  <section class="dash-player" id="dashPlayer" aria-label="Player" data-empty="true">
-    <div class="dash-now">
-      <div class="dash-now-cover" id="nowCover"></div>
-      <div class="dash-now-copy">
-        <strong id="nowTitle">Nothing playing</strong>
-        <span id="nowArtist">Press play on any track</span>
-      </div>
+  {% if signed_in %}
+  <form class="dash-save" id="moodForm" method="POST" action="{{ url_for('main.mood_checkin') }}" hidden>
+    <input type="hidden" name="mood" id="moodInput" value="">
+    <span class="dash-save-text">Set <strong id="saveMoodName"></strong> as your current mood?</span>
+    <button type="submit" class="dash-btn primary" id="saveMoodBtn">{{ ico('check') }}<span>Save mood check-in</span></button>
+  </form>
+  <noscript>
+    <form class="dash-save" method="POST" action="{{ url_for('main.mood_checkin') }}" style="display:flex">
+      <select name="mood" aria-label="Mood">{% for m in checkin_moods %}<option value="{{ m }}" {% if current_user.preferred_mood == m %}selected{% endif %}>{{ m }}</option>{% endfor %}</select>
+      <button type="submit" class="dash-btn primary"><span>Save mood check-in</span></button>
+    </form>
+  </noscript>
+  {% else %}
+  <div class="dash-save guest" id="moodGuestBar" hidden>
+    <span class="dash-save-text">Like this mood? Log in to save it to your mood journal.</span>
+    <button type="button" class="dash-btn primary" data-auth-open="login"><span>Log in to save</span></button>
+  </div>
+  {% endif %}
+</section>
+
+{# ---------- Tracks ---------- #}
+<section class="dash-section" id="tracks" aria-labelledby="tracksTitle">
+  <div class="dash-head">
+    <div>
+      <h2 id="tracksTitle">{{ 'Picked for your vibe' if signed_in else 'Start listening' }}</h2>
+      <p id="tracksSub">{{ 'Ranked around your language, favourite artist and mood.' if signed_in else 'Licensed, free-to-stream music. Press play on any cover.' }}</p>
     </div>
-
-    <div class="dash-transport">
-      <div class="dash-buttons">
-        <button type="button" class="dash-ctl" id="btnPrev" aria-label="Previous track">{{ ico('prev') }}</button>
-        <button type="button" class="dash-ctl main" id="btnPlay" aria-label="Play">{{ ico('play') }}</button>
-        <button type="button" class="dash-ctl" id="btnNext" aria-label="Next track">{{ ico('next') }}</button>
-      </div>
-      <div class="dash-seekrow">
-        <span class="dash-time" id="timeNow">0:00</span>
-        <input type="range" class="dash-range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Seek" disabled>
-        <span class="dash-time" id="timeEnd">0:00</span>
-      </div>
+    <div class="dash-head-actions">
+      <button type="button" class="dash-chip" id="clearFilters" hidden>{{ ico('close') }}<span>Clear filter</span></button>
+      <a class="dash-link" id="allResults" href="{{ url_for('main.music') }}" hidden>See all results in Search &rarr;</a>
+      <a class="dash-link" id="libraryLink" href="{{ url_for('main.music') }}">Open Search &rarr;</a>
     </div>
+  </div>
+  <div class="dash-grid" id="trackGrid" data-queue-scope aria-live="polite">
+    {% for t in all_tracks %}{{ track_card(t, favorite_slugs, signed_in) }}
+    {% else %}
+    <div class="dash-empty"><strong>Your music shelf is waiting.</strong>Tracks will appear here once they are added to the library.</div>
+    {% endfor %}
+  </div>
+  <div class="dash-empty" id="trackEmpty" hidden></div>
+</section>
 
-    <div class="dash-extra">
-      <a class="dash-ctl small" id="openFull" href="{{ url_for('main.music') }}" aria-label="Open full player" title="Open full player (lyrics, queue, modes)">{{ ico('expand') }}</a>
-      <button type="button" class="dash-ctl small" id="btnMute" aria-label="Mute">{{ ico('volume') }}</button>
-      <input type="range" class="dash-range vol" id="vol" min="0" max="100" value="80" step="1" aria-label="Volume">
+{# ---------- Playlists ---------- #}
+<section class="dash-section" id="playlists" aria-labelledby="plTitle">
+  <div class="dash-head">
+    <div>
+      <h2 id="plTitle">Your playlists</h2>
+      <p>{{ 'Open one to see its tracks, or press play to start listening.' if signed_in else 'Playlists are saved to your account.' }}</p>
     </div>
+    <div class="dash-head-actions">
+      {% if signed_in %}<a class="dash-chip" href="{{ url_for('main.playlist') }}#new" data-new-playlist>{{ ico('plus') }}<span>New playlist</span></a>
+      <a class="dash-link" href="{{ url_for('main.playlist') }}">Manage playlists &rarr;</a>{% endif %}
+    </div>
+  </div>
+  {% if signed_in %}
+  <div class="dash-grid" id="plGrid">
+    {% for pl in playlists %}{{ playlist_card(pl) }}
+    {% else %}
+    <div class="dash-empty"><strong>No playlists yet.</strong>Create one, then add tracks from Search.</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="dash-empty"><strong>Save the music you love.</strong>Log in or sign up to build playlists, heart tracks and sync your mood journal.
+    <div class="dash-empty-actions"><button type="button" class="dash-btn primary" data-auth-open="login"><span>Log in</span></button><button type="button" class="dash-btn" data-auth-open="register"><span>Sign up</span></button></div>
+  </div>
+  {% endif %}
+</section>
 
-    <audio id="audioPlayer" preload="none"></audio>
-    <p class="dash-player-msg" id="playerMsg" role="status" hidden></p>
-  </section>
+{# ---------- Tools ---------- #}
+<section class="dash-section" id="tools" aria-labelledby="toolsTitle">
+  <div class="dash-head"><div><h2 id="toolsTitle">Explore</h2><p>Everything else in MOODIFY, one click away.</p></div></div>
+  <div class="dash-tools">
+    <a href="{{ url_for('main.moods') }}" class="dash-tool">{{ ico('moods') }}<span><strong>Mood pages</strong><small>A page of music for each mood</small></span></a>
+    <a href="{{ url_for('main.recommendations') }}" class="dash-tool">{{ ico('recs') }}<span><strong>Recommendations</strong><small>A mix ranked from your profile and check-ins</small></span></a>
+    <a href="{{ url_for('main.moodometer') }}" class="dash-tool">{{ ico('journal') }}<span><strong>Mood journal</strong><small>Your mood timeline and stats</small></span></a>
+    <a href="{{ url_for('main.music') }}" class="dash-tool">{{ ico('search') }}<span><strong>Search the library</strong><small>Search and filter every track</small></span></a>
+  </div>
+</section>
 
-  {# ============================ MOBILE BOTTOM NAV ============================ #}
-  <nav class="dash-bottomnav" aria-label="Mobile">
-    <a href="#top" class="active" data-jump="top">{{ ico('home') }}<span>Home</span></a>
-    <a href="#moods" data-jump="moods">{{ ico('moods') }}<span>Moods</span></a>
-    <a href="#playlists" data-jump="playlists">{{ ico('playlists') }}<span>Playlists</span></a>
-    <a href="{{ url_for('main.music') }}">{{ ico('library') }}<span>Library</span></a>
-    <a href="{{ url_for('main.profile') }}">{{ ico('user') }}<span>Profile</span></a>
-  </nav>
-</div>
-
-{# ---------- data for dashboard.js (kept as JSON so nothing is guessed on the client) ---------- #}
-{% set data_tracks = [] %}
-{% for t in all_tracks %}
-  {% set _ = data_tracks.append({
-    'slug': t.slug, 'id': t.id, 'title': t.title, 'artist': t.artist, 'composer': t.composer,
-    'genre': t.genre, 'mood': t.mood, 'language': t.language, 'duration': t.duration,
-    'audio': t.audio_url, 'fallback': t.fallback_audio_url,
-    'url': url_for('main.listen', slug=t.slug),
-    'rank': (picked_ids.index(t.id) if t.id in picked_ids else 99)
-  }) %}
-{% endfor %}
-{% set data_lists = [] %}
-{% for pl in playlists %}
-  {% set _ = data_lists.append({
-    'id': pl.id, 'name': pl.name,
-    'slugs': pl.catalog_tracks | map(attribute='catalog_slug') | list,
-    'url': url_for('main.playlist_detail', playlist_id=pl.id)
-  }) %}
-{% endfor %}
-<script type="application/json" id="dashData">{{ {
-  'tracks': data_tracks,
-  'playlists': data_lists,
-  'moods': mood_cards,
-  'saveable': checkin_moods,
-  'current': current_user.preferred_mood or '',
-  'urls': {'library': url_for('main.music')}
-} | tojson }}</script>
-
+<footer class="dash-foot">Your music · Your mood · Your MOODIFY</footer>
 {% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'moods' %}
+{% set nav = 'moods' %}
+{% block title %}Moods | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-hero">
+  <div>
+    <span class="kicker">Moods</span>
+    <h1>Pick a mood, get the music</h1>
+    <p>Every mood has its own page. Open one to see its tracks and play them straight away.</p>
+  </div>
+</section>
+<div class="mood-tiles" id="moodTiles">
+  {% for m in moods %}
+  <a class="mood-link-tile" href="{{ url_for('main.mood_page', name=m) }}" data-mood="{{ m }}">
+    <span class="dash-mood-ico" data-glyph="{{ m }}"></span>
+    <strong>{{ m }}</strong>
+    <small>{{ mood_counts.get(m, 0) }} track{{ '' if mood_counts.get(m, 0) == 1 else 's' }}</small>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

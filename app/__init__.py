@@ -35,4 +35,8 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
 
+    # Guests can browse; pages that need an account show a friendly sign-in prompt.
+    from .main import unauthorized
+    login_manager.unauthorized_handler(unauthorized)
+
     return app

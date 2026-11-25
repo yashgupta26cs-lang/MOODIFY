@@ -1,0 +1,18 @@
+{% extends 'shell.html' %}
+{% from '_icons.html' import ico %}
+{% set page_id = 'notfound' %}
+{% set nav = '' %}
+{% block title %}Page not found | MOODIFY{% endblock %}
+{% block page %}
+<section class="page-center">
+  <div class="gate-card">
+    <span class="gate-ico">{{ ico('note') }}</span>
+    <h1>We could not find that page</h1>
+    <p>The link may be old or mistyped. Head back to the music and keep listening.</p>
+    <div class="gate-actions">
+      <a class="dash-btn primary" href="{{ url_for('main.index') }}"><span>Go to Home</span></a>
+      <a class="dash-btn" href="{{ url_for('main.music') }}"><span>Search music</span></a>
+    </div>
+  </div>
+</section>
+{% endblock %}
