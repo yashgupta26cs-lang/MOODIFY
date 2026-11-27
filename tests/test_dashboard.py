@@ -98,12 +98,63 @@ def test_personal_pages_show_a_gate_not_a_redirect(guest):
         assert guest.get(path, headers=JSON_HEADERS).get_json()["ok"] is False
 
 
-def test_login_and_register_pages_render(guest):
+def test_there_is_no_standalone_login_page(guest):
+    """/login and /register only send the visitor to the home page with the pop-up open."""
+    resp = guest.get("/login")
+    assert resp.status_code == 302 and resp.headers["Location"] == "/?auth=login"
+    resp = guest.get("/register?next=/playlist")
+    assert resp.status_code == 302 and resp.headers["Location"] == "/?auth=register&next=/playlist"
+    assert guest.get("/login?next=//evil.example.com").headers["Location"] == "/?auth=login"   # unsafe next is dropped
+    assert not (Path(__file__).resolve().parent.parent / "app" / "templates" / "auth.html").exists()
+
+
+def test_members_are_sent_home_from_the_old_login_urls(logged_in):
+    client, *_ = logged_in
     for path in ("/login", "/register"):
-        resp = guest.get(path)
-        assert resp.status_code == 200
-        html = resp.get_data(as_text=True)
-        assert "css/fx.css" in html and "css/pages.css" in html
+        resp = client.get(path)
+        assert resp.status_code == 302 and resp.headers["Location"] == "/"
+
+
+def test_login_popup_markup_for_logged_out_visitors(guest):
+    html = guest.get("/").get_data(as_text=True)
+    assert 'id="authModal"' in html and "aria-modal" in html
+    for needle in ('data-auth-tab="login"', 'data-auth-tab="register"', 'data-pw-toggle', 'af-login-email',
+                   'af-reg-username', 'af-reg-mobile', 'data-busy-label', 'data-auth-close', 'auth-x'):
+        assert needle in html, needle
+    assert 'data-allow-guest' in html                      # the Sound button keeps working while logged out
+
+
+def test_members_do_not_get_the_popup(logged_in):
+    client, *_ = logged_in
+    html = client.get("/").get_data(as_text=True)
+    assert 'id="authModal"' not in html
+    assert "Log out" in html
+
+
+def test_click_gate_is_wired_in_the_script():
+    js = (STATIC / "js/app.js").read_text()
+    assert "guestClickGate" in js and "addEventListener('click', guestClickGate, true)" in js
+    assert "isAuthenticated" in js and "data-allow-guest" in js
+    assert "Escape" in js
+
+
+def test_popup_is_flat_sharp_and_quick():
+    css = (STATIC / "css/pages.css").read_text()
+    block = css[css.index(".auth-card {"):css.index("@keyframes auth-in")]
+    assert "backdrop-filter" not in block
+    assert re.search(r"border-radius:\s*[0-4]px", block)
+    assert "ease-out" in block and re.search(r"animation:\s*auth-in\s+0\.1[5-9]s|animation:\s*auth-in\s+0\.2s", block)
+
+
+def test_health_endpoint_is_cheap(guest):
+    from sqlalchemy import event
+    from app import db
+    statements = []
+    event.listen(db.engine, "before_cursor_execute", lambda *a: statements.append(a[2]))
+    resp = guest.get("/health")
+    assert resp.status_code == 200 and resp.get_json() == {"status": "ok"}
+    assert guest.head("/health").status_code == 200
+    assert statements == []                                  # no database access
 
 
 def test_register_and_login_over_json(guest):
@@ -116,6 +167,20 @@ def test_register_and_login_over_json(guest):
     ok = guest.post("/login", data={"email": "newbie@example.com", "password": "secret123"}, headers=JSON_HEADERS)
     body = ok.get_json()
     assert body["ok"] is True and body["redirect"]
+    assert any(c.startswith("remember_token=") for c in ok.headers.getlist("Set-Cookie"))   # stays signed in
+
+
+def test_json_errors_name_the_field_for_inline_messages(guest):
+    guest.post("/register", data=NEWBIE)
+    guest.get("/logout")
+    dup = guest.post("/register", data=dict(NEWBIE, email="other@example.com", mobile="9123456780"), headers=JSON_HEADERS).get_json()
+    assert dup["ok"] is False and dup["field"] == "username"
+    dup = guest.post("/register", data=dict(NEWBIE, username="other"), headers=JSON_HEADERS).get_json()
+    assert dup["field"] == "email"
+    short = guest.post("/register", data=dict(NEWBIE, username="x1", email="x1@example.com", mobile="9000000001", password="abc"), headers=JSON_HEADERS).get_json()
+    assert short["field"] == "password"
+    bad = guest.post("/login", data={"email": "newbie@example.com", "password": "nope"}, headers=JSON_HEADERS).get_json()
+    assert bad["ok"] is False and bad["field"] is None
 
 
 def test_next_parameter_cannot_leave_the_site(guest):
@@ -203,7 +268,7 @@ def test_add_to_playlist_returns_json_for_the_shell(logged_in):
 # ---------------------------------------------------------------- transitions and sound
 
 def test_no_blocking_intro_or_curtain_left(guest):
-    base = guest.get("/login").get_data(as_text=True)
+    base = guest.get("/").get_data(as_text=True)
     assert "fx-veil" not in base
     flair_js = (STATIC / "js/fx/flair.js").read_text()
     flair_css = (STATIC / "css/fx-flair.css").read_text()
@@ -228,6 +293,6 @@ def test_sound_manager_is_one_global_web_audio_module(guest):
     assert not re.search(r"\.(mp3|wav|ogg)\b", text)          # fully synthesised, no audio files
     assert not re.search(r"https?://(?!www\.w3\.org)", text)  # no external dependency
     assert text.count("new (global.AudioContext") + text.count("new AudioContext") <= 1
-    for page in ("/", "/music", "/login"):
+    for page in ("/", "/music", "/moods"):
         html = guest.get(page).get_data(as_text=True)
         assert "js/sound.js" in html, page

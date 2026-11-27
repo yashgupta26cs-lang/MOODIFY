@@ -59,6 +59,7 @@
     favs = {};
     (data.favorites || []).forEach(function (s) { favs[s] = true; });
     signedIn = !!data.signedIn;
+    doc.documentElement.setAttribute('data-auth', signedIn ? 'user' : 'guest');
     App.data = data;
   }
 
@@ -568,13 +569,38 @@
     });
   }
 
-  /* ================================ Log in / Sign up pop-up ================================ */
-  var modal, opener = null;
+  /* ================================ Log in / Create account pop-up ================================ */
+  var modal, opener = null, authDone = false;
+  var RULES = {
+    email: function (v) { return !v ? 'Enter your email address.' : (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? '' : 'Enter a valid email, like you@example.com.'); },
+    username: function (v) { return v ? '' : 'Pick a username.'; },
+    mobile: function (v) { return !v ? 'Enter your mobile number.' : (/^\+?[0-9]{10,15}$/.test(v.replace(/[\s-]/g, '')) ? '' : 'Use 10 to 15 digits, for example 9876543210.'); }
+  };
+  function ruleFor(form, name, v) {
+    if (name === 'password') {
+      if (!v) return 'Enter your password.';
+      return form.getAttribute('data-auth-form') === 'register' && v.length < 8 ? 'Use at least 8 characters.' : '';
+    }
+    return RULES[name] ? RULES[name](v) : '';
+  }
+  function fieldBox(form, name) { return $('.af[data-field="' + name + '"]', form); }
+  function setFieldError(form, name, msg) {
+    var box = fieldBox(form, name);
+    if (!box) return false;
+    var p = $('.af-err', box), input = $('input', box);
+    if (msg) { p.textContent = msg; p.hidden = false; input.setAttribute('aria-invalid', 'true'); box.classList.add('has-error'); }
+    else { p.hidden = true; p.textContent = ''; input.removeAttribute('aria-invalid'); box.classList.remove('has-error'); }
+    return true;
+  }
+  function clearErrors(form) {
+    $$('.af', form).forEach(function (box) { setFieldError(form, box.getAttribute('data-field'), ''); });
+    var e = $('.auth-error', form); e.hidden = true; e.textContent = '';
+  }
   function setAuthMode(root, mode) {
     $$('[data-auth-tab]', root).forEach(function (b) { if (b.getAttribute('role') === 'tab') b.setAttribute('aria-selected', b.getAttribute('data-auth-tab') === mode ? 'true' : 'false'); });
-    $$('[data-auth-form]', root).forEach(function (f) { f.hidden = f.getAttribute('data-auth-form') !== mode; $('.auth-error', f).hidden = true; });
+    $$('[data-auth-form]', root).forEach(function (f) { var show = f.getAttribute('data-auth-form') === mode; if (f.hidden === show) { f.hidden = !show; } clearErrors(f); });
     var title = $('#authModalTitle', root);
-    if (title) title.textContent = mode === 'register' ? 'Create your account' : 'Welcome to MOODIFY';
+    if (title) title.textContent = mode === 'register' ? 'Create your account' : 'Log in to MOODIFY';
   }
   function currentPath() {
     var p = global.location.pathname + global.location.search;
@@ -582,15 +608,16 @@
   }
   function openAuth(mode, opts) {
     opts = opts || {};
-    if (signedIn) return;
+    if (signedIn || authDone) return;
     modal = modal || $('#authModal');
     if (!modal) { global.location.href = mode === 'register' ? data.urls.register : data.urls.login; return; }
-    opener = doc.activeElement;
+    var already = !modal.hidden;
+    if (!already) opener = doc.activeElement;
     setAuthMode(modal, mode || 'login');
     var next = opts.next !== undefined && opts.next !== null && opts.next !== '' ? opts.next : currentPath();
     $$('[data-auth-next]', modal).forEach(function (i) { i.value = next; });
     var note = $('.auth-head p', modal);
-    if (note) note.textContent = opts.note || 'Log in to save playlists, heart tracks and keep your mood journal.';
+    if (note) note.textContent = opts.note || 'Log in or create an account to play music, save playlists and keep your mood journal.';
     modal.hidden = false;
     var first = $('[data-auth-form]:not([hidden]) input:not([type="hidden"])', modal);
     global.setTimeout(function () { if (first) first.focus(); }, 30);
@@ -601,38 +628,112 @@
     if (opener && opener.focus && doc.contains(opener)) opener.focus();
   }
   App.openAuth = openAuth;
+  App.closeAuth = closeAuth;
+  Object.defineProperty(App, 'isAuthenticated', { get: function () { return signedIn; } });
 
+  // Logged-out visitors: a real click anywhere in the app opens the pop-up. Scrolling, hovering and
+  // selecting text do not. Clicks inside the pop-up, and the Sound button, behave normally.
+  function guestClickGate(e) {
+    if (signedIn || authDone) return;
+    var t = e.target;
+    if (!t || !t.closest || !dash || !dash.contains(t)) return;
+    if (t.closest('#authModal') || t.closest('[data-allow-guest]')) return;
+    var sel = global.getSelection && global.getSelection();
+    if (sel && !sel.isCollapsed && String(sel).trim()) return;
+    var openBtn = t.closest('[data-auth-open]');
+    e.preventDefault();
+    e.stopPropagation();
+    openAuth(openBtn ? openBtn.getAttribute('data-auth-open') : 'login', { next: openBtn ? openBtn.getAttribute('data-auth-next') : '' });
+  }
+
+  function tidyValue(form, input) {
+    var v = input.value.trim();
+    if (input.name === 'mobile') v = v.replace(/[\s-]/g, '');
+    if (input.name === 'email') v = v.toLowerCase();
+    if (input.name === 'password') v = input.value;
+    return v;
+  }
   function wireAuthForm(form) {
     var err = $('.auth-error', form);
     var btn = $('button[type="submit"]', form);
-    var label = btn.querySelector('span');
+    var label = $('.af-label', btn);
     var original = label.textContent;
-    err.hidden = true;
-    var ok = true;
-    $$('input[required]', form).forEach(function (i) { if (!i.value.trim()) ok = false; });
-    if (!ok) { err.textContent = 'Please fill in every field.'; err.hidden = false; if (Sound()) Sound().play('error'); return; }
-    btn.setAttribute('disabled', '');
-    label.textContent = 'One moment…';
-    var params = {};
-    $$('input[name]', form).forEach(function (i) { params[i.name] = i.value; });
+    clearErrors(form);
+    var firstBad = null, params = {};
+    $$('input[name]', form).forEach(function (i) {
+      var v = tidyValue(form, i);
+      params[i.name] = v;
+      if (i.type === 'hidden') return;
+      var msg = ruleFor(form, i.name, v);
+      if (msg) { setFieldError(form, i.name, msg); if (!firstBad) firstBad = i; }
+    });
+    if (firstBad) { firstBad.focus(); if (Sound()) Sound().play('error'); return; }
+    var inputs = $$('input', form);
+    function busy(on) {
+      btn.disabled = on; btn.classList.toggle('is-loading', on);
+      if (on) btn.setAttribute('aria-busy', 'true'); else btn.removeAttribute('aria-busy');
+      label.textContent = on ? btn.getAttribute('data-busy-label') : original;
+      inputs.forEach(function (i) { if (on) i.setAttribute('readonly', ''); else i.removeAttribute('readonly'); });
+    }
+    busy(true);
     postJSON(form.getAttribute('action'), params).then(function (j) {
       if (j.ok) {
+        authDone = true;                       // unlocked: no more pop-up while the page reloads as a member
         if (Sound()) Sound().play('chime');
-        label.textContent = 'Welcome!';
-        global.setTimeout(function () { global.location.assign(j.redirect || '/'); }, 120);
+        closeAuth();
+        global.setTimeout(function () { global.location.assign(j.redirect || '/'); }, 130);
         return;
       }
-      err.textContent = j.error || 'That did not work. Please try again.';
-      err.hidden = false;
+      busy(false);
+      var msg = j.error || 'That did not work. Please try again.';
+      if (!(j.field && setFieldError(form, j.field, msg))) { err.textContent = msg; err.hidden = false; }
+      else { var bad = $('input[name="' + j.field + '"]', form); if (bad) bad.focus(); }
       if (Sound()) Sound().play('error');
-      btn.removeAttribute('disabled');
-      label.textContent = original;
     }).catch(function () {
+      busy(false);
       err.textContent = 'We could not reach the server. Check your connection and try again.';
       err.hidden = false;
-      btn.removeAttribute('disabled');
-      label.textContent = original;
+      if (Sound()) Sound().play('error');
     });
+  }
+  function wireAuthModal() {
+    if (!modal) return;
+    modal.addEventListener('input', function (e) {
+      var box = e.target.closest && e.target.closest('.af');
+      if (box && box.classList.contains('has-error')) setFieldError(e.target.closest('form'), box.getAttribute('data-field'), '');
+      var form = e.target.closest && e.target.closest('form');
+      if (form) { var g = $('.auth-error', form); if (g) g.hidden = true; }
+    });
+    modal.addEventListener('focusout', function (e) {
+      var i = e.target;
+      if (!i || i.tagName !== 'INPUT' || i.type === 'hidden') return;
+      var form = i.closest('form');
+      if (!form || !i.value) return;
+      var msg = ruleFor(form, i.name, tidyValue(form, i));
+      if (msg) setFieldError(form, i.name, msg);
+    });
+    modal.addEventListener('click', function (e) {
+      var tog = e.target.closest('[data-pw-toggle]');
+      if (!tog) return;
+      var input = $('input', tog.closest('.af-pw'));
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      tog.setAttribute('aria-pressed', show ? 'true' : 'false');
+      tog.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      input.focus();
+    });
+  }
+  function openFromQuery() {
+    // /login and /register no longer have a page of their own: they land here as /?auth=login or /?auth=register.
+    var qs;
+    try { qs = new global.URLSearchParams(global.location.search); } catch (e) { return; }
+    var mode = qs.get('auth');
+    if (mode !== 'login' && mode !== 'register') return;
+    var next = qs.get('next') || '';
+    qs.delete('auth'); qs.delete('next');
+    var rest = qs.toString();
+    global.history.replaceState({ moodify: 1 }, '', global.location.pathname + (rest ? '?' + rest : '') + global.location.hash);
+    if (!signedIn) openAuth(mode, { next: next });
   }
 
   /* ================================ navigation (the workspace swap) ================================ */
@@ -798,6 +899,8 @@
 
   /* ================================ global event wiring ================================ */
   function wire() {
+    // logged-out visitors: any click opens the Log in / Create account pop-up (capture phase, runs before every other click handler)
+    doc.addEventListener('click', guestClickGate, true);
     // links
     doc.addEventListener('click', function (e) {
       if (e.defaultPrevented) return;
@@ -924,6 +1027,7 @@
     inner = $('#dashInner');
     readData();
     modal = $('#authModal');
+    wireAuthModal();
     try {
       buildPlayer();
       wire();
@@ -934,6 +1038,7 @@
       pageInit();
       paintNow();
       paintPlayButton();
+      openFromQuery();
     } catch (e) { if (global.console) console.warn('[app]', e); }
     doc.documentElement.classList.add('app-ready');
   }

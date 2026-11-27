@@ -51,7 +51,7 @@
       </div>
       {% else %}
       <div class="dash-side-guest">
-        <p>You are browsing as a guest. Log in to save playlists, heart tracks and sync your moods.</p>
+        <p>You are previewing MOODIFY. Log in to play music, save playlists, heart tracks and sync your moods.</p>
         <button type="button" class="dash-btn primary" data-auth-open="login"><span>Log in</span></button>
         <button type="button" class="dash-btn" data-auth-open="register"><span>Sign up</span></button>
       </div>
@@ -74,7 +74,7 @@
       </div>
 
       <div class="dash-account">
-        <button type="button" class="dash-icon-btn sound-toggle" id="soundToggle" aria-pressed="true" aria-label="Sound effects on" title="Sound effects: on" data-nosound>
+        <button type="button" class="dash-icon-btn sound-toggle" id="soundToggle" data-allow-guest aria-pressed="true" aria-label="Sound effects on" title="Sound effects: on" data-nosound>
           <span class="s-on">{{ ico('sound-on') }}</span><span class="s-off">{{ ico('sound-off') }}</span>
         </button>
         {% if signed_in %}
@@ -149,7 +149,7 @@
   <div class="dash-toasts" id="toasts" aria-live="polite"></div>
 
 {% if not signed_in %}
-{# ---------- Log in / Sign up pop-up (guests only). Closing it just returns to browsing. ---------- #}
+{# ---------- Log in / Create account pop-up (logged-out visitors only). Any click in the app opens it; X, Esc or the backdrop closes it. ---------- #}
 <div class="auth-modal" id="authModal" hidden>
   <div class="auth-backdrop" data-auth-close></div>
   <div class="auth-card" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
@@ -157,14 +157,14 @@
     <div class="auth-head">
       <span class="dash-brand-mark"><svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M4 29V11L12 22L20 7L28 22L36 11V29" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       <h2 id="authModalTitle">Welcome to MOODIFY</h2>
-      <p>Log in to save playlists, heart tracks and keep your mood journal.</p>
+      <p>Log in or create an account to play music, save playlists and keep your mood journal.</p>
     </div>
     <div class="auth-tabs" role="tablist">
       <button type="button" role="tab" data-auth-tab="login" aria-selected="true">Log in</button>
       <button type="button" role="tab" data-auth-tab="register" aria-selected="false">Sign up</button>
     </div>
     {% include '_auth_forms.html' %}
-    <button type="button" class="auth-guest" data-auth-close>Keep browsing as a guest</button>
+    <button type="button" class="auth-guest" data-auth-close>Not now, just looking</button>
   </div>
 </div>
 {% endif %}

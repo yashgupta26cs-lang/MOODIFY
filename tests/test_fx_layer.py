@@ -44,7 +44,7 @@ def test_asset_is_served(client, name):
     assert client.get("/static/" + name).status_code == 200
 
 
-@pytest.mark.parametrize("path", ["/login", "/register"])
+@pytest.mark.parametrize("path", ["/", "/music"])
 def test_public_pages_link_the_layer(client, path):
     resp = client.get(path)
     assert resp.status_code == 200
@@ -73,7 +73,7 @@ def test_saved_data_pages_still_need_a_login(client):
 
 
 def test_art_module_is_loaded_before_flair(client):
-    html = client.get("/login").get_data(as_text=True)
+    html = client.get("/").get_data(as_text=True)
     assert html.index("js/fx/art.js") < html.index("js/fx/flair.js")
 
 

@@ -1,20 +1,51 @@
-{# The two sign-in forms. Used by the pop-up and by the dedicated /login and /register pages. #}
+{# The Log in / Create account forms. They live only inside the pop-up in shell.html (there is no standalone login page). #}
+{% from '_icons.html' import ico %}
 {% set auth_next = next_url|default('') %}
 <form class="auth-form" data-auth-form="login" method="POST" action="{{ url_for('auth.login') }}" novalidate>
   <input type="hidden" name="next" value="{{ auth_next }}" data-auth-next>
-  <label><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
-  <label><span>Password</span><input type="password" name="password" autocomplete="current-password" placeholder="Your password" required></label>
+  <div class="af" data-field="email">
+    <label for="af-login-email">Email</label>
+    <input id="af-login-email" type="email" name="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="af-login-email-err">
+    <p class="af-err" id="af-login-email-err" hidden></p>
+  </div>
+  <div class="af" data-field="password">
+    <label for="af-login-password">Password</label>
+    <div class="af-pw">
+      <input id="af-login-password" type="password" name="password" autocomplete="current-password" placeholder="Your password" required aria-describedby="af-login-password-err">
+      <button type="button" class="af-eye" data-pw-toggle aria-label="Show password" aria-pressed="false"><span class="af-eye-on">{{ ico('eye') }}</span><span class="af-eye-off">{{ ico('eye-off') }}</span></button>
+    </div>
+    <p class="af-err" id="af-login-password-err" hidden></p>
+  </div>
   <p class="auth-error" role="alert" hidden></p>
-  <button type="submit" class="dash-btn primary wide"><span>Log in</span></button>
+  <button type="submit" class="dash-btn primary wide af-submit" data-busy-label="Logging in…"><span class="af-spin" aria-hidden="true"></span><span class="af-label">Log in</span></button>
   <p class="auth-switch">New here? <button type="button" data-auth-tab="register">Create an account</button></p>
 </form>
 <form class="auth-form" data-auth-form="register" method="POST" action="{{ url_for('auth.register') }}" novalidate hidden>
   <input type="hidden" name="next" value="{{ auth_next }}" data-auth-next>
-  <label><span>Username</span><input type="text" name="username" autocomplete="username" placeholder="Pick a username" required></label>
-  <label><span>Email</span><input type="email" name="email" autocomplete="email" placeholder="you@example.com" required></label>
-  <label><span>Mobile number</span><input type="tel" name="mobile" autocomplete="tel" inputmode="tel" placeholder="10 to 15 digits" required></label>
-  <label><span>Password</span><input type="password" name="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" required></label>
+  <div class="af" data-field="username">
+    <label for="af-reg-username">Username</label>
+    <input id="af-reg-username" type="text" name="username" autocomplete="username" placeholder="Pick a username" required aria-describedby="af-reg-username-err">
+    <p class="af-err" id="af-reg-username-err" hidden></p>
+  </div>
+  <div class="af" data-field="email">
+    <label for="af-reg-email">Email</label>
+    <input id="af-reg-email" type="email" name="email" autocomplete="email" placeholder="you@example.com" required aria-describedby="af-reg-email-err">
+    <p class="af-err" id="af-reg-email-err" hidden></p>
+  </div>
+  <div class="af" data-field="mobile">
+    <label for="af-reg-mobile">Mobile number</label>
+    <input id="af-reg-mobile" type="tel" name="mobile" autocomplete="tel" inputmode="tel" placeholder="10 to 15 digits" required aria-describedby="af-reg-mobile-err">
+    <p class="af-err" id="af-reg-mobile-err" hidden></p>
+  </div>
+  <div class="af" data-field="password">
+    <label for="af-reg-password">Password</label>
+    <div class="af-pw">
+      <input id="af-reg-password" type="password" name="password" autocomplete="new-password" placeholder="At least 8 characters" required aria-describedby="af-reg-password-err">
+      <button type="button" class="af-eye" data-pw-toggle aria-label="Show password" aria-pressed="false"><span class="af-eye-on">{{ ico('eye') }}</span><span class="af-eye-off">{{ ico('eye-off') }}</span></button>
+    </div>
+    <p class="af-err" id="af-reg-password-err" hidden></p>
+  </div>
   <p class="auth-error" role="alert" hidden></p>
-  <button type="submit" class="dash-btn primary wide"><span>Create account</span></button>
+  <button type="submit" class="dash-btn primary wide af-submit" data-busy-label="Creating account…"><span class="af-spin" aria-hidden="true"></span><span class="af-label">Create account</span></button>
   <p class="auth-switch">Already have an account? <button type="button" data-auth-tab="login">Log in</button></p>
 </form>

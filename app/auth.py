@@ -3,7 +3,7 @@
 
 import re
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, redirect, url_for, flash, request, jsonify
 from flask_login import login_user, logout_user, current_user
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -26,9 +26,17 @@ def _safe_next(value):
     return None
 
 
-def _fail(message, endpoint):
+def _open_modal(mode):
+    """There is no standalone login page: send visitors to the home page with the pop-up open."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    return redirect(url_for('main.index', auth=mode, next=_safe_next(request.args.get('next'))))
+
+
+def _fail(message, endpoint, field=None):
+    # `field` names the form input the message belongs to, so the pop-up can show it under that input.
     if _wants_json():
-        return jsonify(ok=False, error=message), 400
+        return jsonify(ok=False, error=message, field=field), 400
     flash(message)
     return redirect(url_for(endpoint, next=_safe_next(request.form.get('next'))))
 
@@ -56,19 +64,19 @@ def register():
             return _fail('Please complete all registration fields.', 'auth.register')
 
         if not re.fullmatch(r'\+?[0-9]{10,15}', mobile):
-            return _fail('Please enter a valid mobile number.', 'auth.register')
+            return _fail('Please enter a valid mobile number.', 'auth.register', 'mobile')
 
         if len(password) < 8:
-            return _fail('Password must contain at least 8 characters.', 'auth.register')
+            return _fail('Password must contain at least 8 characters.', 'auth.register', 'password')
 
         if User.query.filter_by(username=username).first():
-            return _fail('This username is already taken.', 'auth.register')
+            return _fail('This username is already taken.', 'auth.register', 'username')
 
         if User.query.filter_by(email=email).first():
-            return _fail('An account with this email already exists.', 'auth.register')
+            return _fail('An account with this email already exists.', 'auth.register', 'email')
 
         if User.query.filter_by(mobile=mobile).first():
-            return _fail('An account with this mobile number already exists.', 'auth.register')
+            return _fail('An account with this mobile number already exists.', 'auth.register', 'mobile')
 
         new_user = User(
             username=username,
@@ -85,13 +93,11 @@ def register():
             db.session.rollback()
             return _fail('These account details are already registered.', 'auth.register')
 
-        login_user(new_user)
+        login_user(new_user, remember=True)
 
         return _done('main.setup', 'Account created successfully! Now personalise your MOODIFY.')
 
-    if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
-    return render_template('auth.html', mode='register', next_url=_safe_next(request.args.get('next')))
+    return _open_modal('register')
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -106,7 +112,7 @@ def login():
 
         if user and check_password_hash(user.password, password):
 
-            login_user(user)
+            login_user(user, remember=True)
 
             if not all([
                 user.preferred_language,
@@ -119,9 +125,7 @@ def login():
 
         return _fail('Invalid email or password.', 'auth.login')
 
-    if current_user.is_authenticated:
-        return redirect(url_for('main.index'))
-    return render_template('auth.html', mode='login', next_url=_safe_next(request.args.get('next')))
+    return _open_modal('login')
 
 
 @auth_bp.route('/logout')

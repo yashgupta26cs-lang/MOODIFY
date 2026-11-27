@@ -189,7 +189,7 @@
   ['pointerdown', 'touchstart', 'keydown', 'click'].forEach(function (n) { doc.addEventListener(n, unlock, true); });
 
   // 2. a soft click on everything you can press
-  var PRESSABLE = 'a[href], button, summary, [role="button"], [role="radio"], [role="tab"], input[type="submit"], input[type="button"], input[type="checkbox"], .dash-cover, .dash-mood';
+  var PRESSABLE = 'a[href], button, summary, [role="button"], [role="radio"], [role="tab"], input[type="submit"], input[type="button"], input[type="checkbox"], .auth-form input:not([type="hidden"]), .dash-cover, .dash-mood';
   doc.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
