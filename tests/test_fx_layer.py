@@ -16,7 +16,7 @@ os.environ.setdefault("DATABASE_URL", "sqlite://")
 STATIC = Path(__file__).resolve().parent.parent / "app" / "static"
 FX_FILES = [
     "css/fx.css", "css/fx-flair.css", "css/dashboard.css", "css/pages.css",
-    "js/sound.js", "js/app.js", "js/pages.js",
+    "css/staff.css", "css/sharp.css", "js/app.js", "js/pages.js", "js/staff.js",
     "js/fx/core.js", "js/fx/icons.js", "js/fx/ambient.js",
     "js/fx/art.js", "js/fx/flair.js", "js/fx/motion.js", "js/fx/pointer.js",
     "vendor/gsap.min.js", "vendor/ScrollTrigger.min.js", "vendor/lenis.min.js",

@@ -30,7 +30,7 @@
       <div class="rec-reason">{% if song.has_personal_match %}Why this is here: {{ song.reasons|join(' · ') }}.{% else %}Explore something new: {{ song.reasons|join(' · ') }}.{% endif %}</div>
     </div>
     <div class="dash-card-actions">
-      <button type="button" class="dash-icon-btn heart{{ ' on' if song.slug in favorite_slugs else '' }}" data-fav="{{ song.slug }}" aria-pressed="{{ 'true' if song.slug in favorite_slugs else 'false' }}" aria-label="Favourite {{ song.title }}" data-sfx="none">{{ ico('heart-fill' if song.slug in favorite_slugs else 'heart') }}</button>
+      <button type="button" class="dash-icon-btn heart{{ ' on' if song.slug in favorite_slugs else '' }}" data-fav="{{ song.slug }}" aria-pressed="{{ 'true' if song.slug in favorite_slugs else 'false' }}" aria-label="Favourite {{ song.title }}">{{ ico('heart-fill' if song.slug in favorite_slugs else 'heart') }}</button>
       <button type="button" class="dash-icon-btn" data-add-to-playlist="{{ song.slug }}" aria-label="Add {{ song.title }} to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
     </div>
   </article>

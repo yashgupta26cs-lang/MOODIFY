@@ -1,0 +1,23 @@
+/* Sharp, square corners everywhere.
+ *
+ * Every card, cover, tile, button, input, badge, menu and the log-in pop-up is a crisp rectangle.
+ * The individual style sheets already use `border-radius: 0`; this file is the safety net that also
+ * wins over Bootstrap (loaded from a CDN: .btn, .form-control, .rounded-*, .badge ...), inline styles
+ * and browser defaults, so no rounded box can come back by accident.
+ * Keep it loaded LAST in base.html.
+ */
+:root {
+  --radius: 0;
+  --bs-border-radius: 0;
+  --bs-border-radius-sm: 0;
+  --bs-border-radius-lg: 0;
+  --bs-border-radius-xl: 0;
+  --bs-border-radius-xxl: 0;
+  --bs-border-radius-2xl: 0;
+  --bs-border-radius-pill: 0;
+}
+*, *::before, *::after { border-radius: 0 !important; }
+/* parts the browser draws itself: slider thumbs and tracks, progress bars, file buttons */
+::-webkit-slider-thumb, ::-webkit-slider-runnable-track, ::-webkit-progress-bar, ::-webkit-progress-value,
+::-webkit-meter-bar, ::-webkit-file-upload-button, ::-webkit-scrollbar-thumb, ::-webkit-scrollbar-track { border-radius: 0 !important; }
+::-moz-range-thumb, ::-moz-range-track, ::-moz-range-progress, ::-moz-progress-bar, ::file-selector-button { border-radius: 0 !important; }

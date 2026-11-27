@@ -12,7 +12,7 @@
     <div class="dash-tags"><span>{{ t.mood }}</span><span>{{ t.genre }}</span><span>{{ t.duration }}</span></div>
   </div>
   <div class="dash-card-actions">
-    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}" data-sfx="none">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
+    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
     <button type="button" class="dash-icon-btn" data-add-to-playlist="{{ t.slug }}" aria-label="Add {{ t.title }} to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
   </div>
 </article>
@@ -28,10 +28,10 @@
   <td class="tl-mood"><a class="tag" href="{{ url_for('main.mood_page', name=t.mood) }}">{{ t.mood }}</a><span class="tag soft">{{ t.genre }}</span></td>
   <td class="tl-time">{{ t.duration }}</td>
   <td class="tl-actions">
-    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}" data-sfx="none">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
+    <button type="button" class="dash-icon-btn heart{{ ' on' if t.slug in favs else '' }}" data-fav="{{ t.slug }}" aria-pressed="{{ 'true' if t.slug in favs else 'false' }}" aria-label="Favourite {{ t.title }}">{{ ico('heart-fill' if t.slug in favs else 'heart') }}</button>
     <button type="button" class="dash-icon-btn" data-add-to-playlist="{{ t.slug }}" aria-label="Add {{ t.title }} to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
     {% if remove_url %}
-    <form method="POST" action="{{ remove_url }}" class="inline-form"><button type="submit" class="dash-icon-btn danger" aria-label="Remove {{ t.title }} from this playlist" title="Remove from playlist" data-sfx="pop">{{ ico('trash') }}</button></form>
+    <form method="POST" action="{{ remove_url }}" class="inline-form"><button type="submit" class="dash-icon-btn danger" aria-label="Remove {{ t.title }} from this playlist" title="Remove from playlist">{{ ico('trash') }}</button></form>
     {% endif %}
   </td>
 </tr>
@@ -63,7 +63,7 @@
   </div>
   {% if deletable %}
   <form class="dash-card-actions" method="POST" action="{{ url_for('main.delete_playlist', playlist_id=pl.id) }}" data-confirm="Delete “{{ pl.name }}”? This cannot be undone.">
-    <button type="submit" class="dash-icon-btn danger" aria-label="Delete {{ pl.name }}" title="Delete playlist" data-sfx="pop">{{ ico('trash') }}</button>
+    <button type="submit" class="dash-icon-btn danger" aria-label="Delete {{ pl.name }}" title="Delete playlist">{{ ico('trash') }}</button>
   </form>
   {% endif %}
 </article>

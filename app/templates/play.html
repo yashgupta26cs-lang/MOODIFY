@@ -19,10 +19,10 @@
     <p class="np-desc" id="trackDescription">{{ first.description or 'Enjoy your selected track in MOODIFY.' }}</p>
     <div class="dash-tags" id="trackTags">{% for v in [first.genre, first.mood, first.language, first.duration] if v %}<span>{{ v }}</span>{% endfor %}</div>
     <div class="detail-actions">
-      <button type="button" class="dash-btn primary big" id="npPlay" data-sfx="click"><span>{{ ico('play') }}<b>Play</b></span></button>
+      <button type="button" class="dash-btn primary big" id="npPlay"><span>{{ ico('play') }}<b>Play</b></span></button>
       <button type="button" class="dash-btn" id="npPrev" aria-label="Previous track">{{ ico('prev') }}</button>
       <button type="button" class="dash-btn" id="npNext" aria-label="Next track">{{ ico('next') }}</button>
-      <button type="button" class="dash-icon-btn heart big" id="npHeart" data-fav="{{ first.slug }}" aria-pressed="false" aria-label="Favourite" data-sfx="none">{{ ico('heart') }}</button>
+      <button type="button" class="dash-icon-btn heart big" id="npHeart" data-fav="{{ first.slug }}" aria-pressed="false" aria-label="Favourite">{{ ico('heart') }}</button>
       <button type="button" class="dash-icon-btn big" id="npAdd" data-add-to-playlist="{{ first.slug }}" aria-label="Add to a playlist" title="Add to a playlist">{{ ico('plus') }}</button>
     </div>
     <div class="np-controls">

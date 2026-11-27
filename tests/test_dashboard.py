@@ -73,7 +73,7 @@ def test_home_is_the_default_entry_point_for_guests(guest):
             assert marker in html, marker
         assert 'data-auth-open="login"' in html and 'data-auth-open="register"' in html
         assert 'id="authModal"' in html
-        assert 'id="soundToggle"' in html
+        assert 'id="soundToggle"' not in html          # no interface sound button
     data = app_data(guest.get("/").get_data(as_text=True))
     assert data["signedIn"] is False
 
@@ -121,7 +121,6 @@ def test_login_popup_markup_for_logged_out_visitors(guest):
     for needle in ('data-auth-tab="login"', 'data-auth-tab="register"', 'data-pw-toggle', 'af-login-email',
                    'af-reg-username', 'af-reg-mobile', 'data-busy-label', 'data-auth-close', 'auth-x'):
         assert needle in html, needle
-    assert 'data-allow-guest' in html                      # the Sound button keeps working while logged out
 
 
 def test_members_do_not_get_the_popup(logged_in):
@@ -142,7 +141,7 @@ def test_popup_is_flat_sharp_and_quick():
     css = (STATIC / "css/pages.css").read_text()
     block = css[css.index(".auth-card {"):css.index("@keyframes auth-in")]
     assert "backdrop-filter" not in block
-    assert re.search(r"border-radius:\s*[0-4]px", block)
+    assert re.search(r"border-radius:\s*0\b", block)
     assert "ease-out" in block and re.search(r"animation:\s*auth-in\s+0\.1[5-9]s|animation:\s*auth-in\s+0\.2s", block)
 
 
@@ -287,12 +286,57 @@ def test_page_swap_is_quick():
     assert "X-Moodify-Nav" in js
 
 
-def test_sound_manager_is_one_global_web_audio_module(guest):
-    text = (STATIC / "js/sound.js").read_text()
-    assert "AudioContext" in text and "moodify.sound" in text
-    assert not re.search(r"\.(mp3|wav|ogg)\b", text)          # fully synthesised, no audio files
-    assert not re.search(r"https?://(?!www\.w3\.org)", text)  # no external dependency
-    assert text.count("new (global.AudioContext") + text.count("new AudioContext") <= 1
+def test_no_interface_sound_effects(guest):
+    """UI click/hover sounds were removed on request. The music player itself is untouched."""
+    assert not (STATIC / "js/sound.js").exists()
+    for path in (list((STATIC / "js").glob("*.js")) + list((STATIC / "js" / "fx").glob("*.js"))):
+        text = path.read_text(errors="ignore")
+        if path.name == "main.js":          # legacy player helper: only a comment mentions AudioContext
+            continue
+        assert "new AudioContext" not in text and "webkitAudioContext" not in text, path
+        assert "MoodifySound" not in text and "createOscillator" not in text, path
     for page in ("/", "/music", "/moods"):
         html = guest.get(page).get_data(as_text=True)
-        assert "js/sound.js" in html, page
+        assert "sound.js" not in html and "soundToggle" not in html and "data-sfx" not in html, page
+        assert 'id="audioPlayer"' in html                          # the real audio player is still there
+
+
+# ---------------------------------------------------------------- sharp corners
+CUSTOM_CSS = ["dashboard.css", "pages.css", "fx.css", "fx-flair.css", "style.css", "staff.css"]
+
+
+def test_every_custom_radius_is_zero():
+    for name in CUSTOM_CSS:
+        css = (STATIC / "css" / name).read_text()
+        for value in re.findall(r"border(?:-[a-z]+){0,2}-radius:\s*([^;}]+)", css):
+            assert value.strip() in ("0", "0px", "inherit"), f"{name}: {value}"
+
+
+def test_sharp_safety_net_loads_last(guest):
+    sharp = (STATIC / "css/sharp.css").read_text()
+    assert "--radius: 0" in sharp and "border-radius: 0 !important" in sharp
+    html = guest.get("/").get_data(as_text=True)
+    assert html.rfind("css/sharp.css") > max(html.rfind(f"css/{n}") for n in ("dashboard.css", "pages.css", "staff.css"))
+
+
+def test_no_rounded_svg_rects():
+    for path in list((STATIC / "js").rglob("*.js")) + list((STATIC.parent / "templates").rglob("*.html")):
+        if "vendor" in path.parts:
+            continue
+        assert not re.search(r"<rect[^>]*\brx=", path.read_text()), path
+
+
+# ------------------------------------------------------------ staff and notes
+def test_staff_ribbon_is_decorative_and_in_the_shell(guest):
+    html = guest.get("/").get_data(as_text=True)
+    assert 'id="staff"' in html and 'aria-hidden="true"' in html
+    assert "css/staff.css" in html and "js/staff.js" in html
+
+
+def test_staff_motion_is_safe():
+    css = (STATIC / "css/staff.css").read_text()
+    assert "pointer-events: none" in css and "prefers-reduced-motion: reduce" in css
+    for body in re.findall(r"@keyframes[^{]+\{((?:[^{}]*\{[^}]*\})*)\s*\}", css):
+        props = set(re.findall(r"([a-z-]+)\s*:", re.sub(r"\{[^}]*\}", lambda m: m.group(0), body)))
+        assert props <= {"transform", "opacity"}, props
+    assert not list((STATIC).rglob("*.png")) or "staff" not in " ".join(str(p) for p in STATIC.rglob("*.png"))

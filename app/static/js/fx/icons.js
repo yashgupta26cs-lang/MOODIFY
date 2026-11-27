@@ -19,20 +19,20 @@
       '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg>',
     wave:
       '<svg class="fx-wave-ico" viewBox="0 0 18 12" aria-hidden="true"><g fill="currentColor">' +
-      '<rect x="1" y="4" width="2" height="4" rx="1"/><rect x="5" y="1" width="2" height="10" rx="1"/>' +
-      '<rect x="9" y="3" width="2" height="6" rx="1"/><rect x="13" y="0" width="2" height="12" rx="1"/></g></svg>',
+      '<rect x="1" y="4" width="2" height="4"/><rect x="5" y="1" width="2" height="10"/>' +
+      '<rect x="9" y="3" width="2" height="6"/><rect x="13" y="0" width="2" height="12"/></g></svg>',
 
     /* ---- empty-state illustrations (viewBox 132 x 96) ---- */
     emptyPlaylist:
       '<svg class="fx-empty-art" viewBox="0 0 132 96" ' + STROKE + ' aria-hidden="true">' +
-      '<rect class="fx-soft" x="24" y="12" width="88" height="56" rx="10"/>' +
-      '<rect x="14" y="24" width="88" height="56" rx="10" fill="currentColor" fill-opacity=".06"/>' +
+      '<rect class="fx-soft" x="24" y="12" width="88" height="56"/>' +
+      '<rect x="14" y="24" width="88" height="56" fill="currentColor" fill-opacity=".06"/>' +
       '<circle cx="44" cy="52" r="15"/><circle cx="44" cy="52" r="4.5" fill="currentColor" fill-opacity=".55" stroke="none"/>' +
       '<path class="fx-soft" d="M68 44h22M68 54h16M68 64h9"/>' +
       '<circle cx="104" cy="74" r="12" fill="#0a1821"/><path d="M104 68v12M98 74h12"/></svg>',
     emptyTrack:
       '<svg class="fx-empty-art" viewBox="0 0 132 96" ' + STROKE + ' aria-hidden="true">' +
-      '<rect x="30" y="14" width="72" height="68" rx="14" fill="currentColor" fill-opacity=".06"/>' +
+      '<rect x="30" y="14" width="72" height="68" fill="currentColor" fill-opacity=".06"/>' +
       '<path d="M76 30v28.5a8 8 0 1 1-4-6.9V36.5l-18 4.5v22a8 8 0 1 1-4-6.9V37l26-7z" fill="currentColor" fill-opacity=".14"/>' +
       '<path class="fx-soft" d="M16 30l3 6M12 54h7M20 74l4-5M114 24l-3 6M118 52h-7M112 72l-4-5"/></svg>',
     emptyMood:

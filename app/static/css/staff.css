@@ -1,0 +1,85 @@
+/* Flowing musical staff + floating notes (see js/staff.js).
+ * Decorative only: aria-hidden, pointer-events:none, behind the content. Only transform and opacity are
+ * animated, so everything runs on the GPU. Reduced motion stops all movement (at the bottom of the file). */
+
+/* colours: warm amber into cool blue by default, tinted to the saved mood's palette once one is chosen */
+.staff { --staff-a: #e8b34f; --staff-b: #5a86e6; }
+
+/* ---------------------------------------------------------------- hero ribbon */
+.dash-work { position: relative; }
+.dash-inner { position: relative; z-index: 1; }
+.staff {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 0; overflow: hidden; pointer-events: none; opacity: 0.5;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 58%, transparent 100%); mask-image: linear-gradient(to bottom, #000 0, #000 58%, transparent 100%);
+}
+.staff-clip {
+  position: absolute; inset: 0; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%); mask-image: linear-gradient(to right, transparent 0, #000 9%, #000 91%, transparent 100%);
+}
+.staff-flow {
+  position: absolute; top: 0; left: 0; height: 100%; will-change: transform;
+  animation: staff-flow 46s linear infinite;
+}
+@keyframes staff-flow { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(var(--staff-p, 1000px) * -1), 0, 0); } }
+.staff.is-off .staff-flow, .staff.is-hidden .staff-flow, .staff.is-off .sn b, .staff.is-hidden .sn b, .staff.is-off .sp, .staff.is-hidden .sp { animation-play-state: paused; }
+
+.staff-lines { position: absolute; top: 0; left: 0; display: block; fill: none; stroke: none; }
+.sg-a { stop-color: var(--staff-a); }
+.sg-b { stop-color: var(--staff-b); }
+.sl-a { stop-color: color-mix(in srgb, #fff 42%, var(--staff-a)); }
+.sl-b { stop-color: color-mix(in srgb, #fff 42%, var(--staff-b)); }
+.staff-glow { opacity: 0.55; filter: blur(5px); }
+.staff-ln { opacity: 0.9; }
+
+/* clefs and notes riding the lines */
+.sn {
+  --tint: color-mix(in srgb, var(--staff-a) calc((1 - var(--t, 0)) * 100%), var(--staff-b));
+  position: absolute; display: block; pointer-events: none;
+  color: #f4e8c6; color: color-mix(in srgb, #fff 58%, var(--tint));
+  transform: rotate(var(--rot, 0deg)); transform-origin: var(--ox, 50%) var(--oy, 50%);
+  filter: drop-shadow(0 0 5px var(--tint));
+}
+.sn b { display: block; width: 100%; height: 100%; opacity: 0.8; will-change: transform, opacity; animation: staff-bob 5.6s ease-in-out infinite alternate; animation-delay: calc(var(--o, 0s) * -1); }
+.sn svg, .rn svg { display: block; width: 100%; height: 100%; overflow: visible; stroke: none; }
+@keyframes staff-bob { from { transform: translate3d(0, 4px, 0); opacity: 0.5; } to { transform: translate3d(0, -5px, 0); opacity: 0.92; } }
+.sp {
+  --tint: color-mix(in srgb, var(--staff-a) calc((1 - var(--t, 0)) * 100%), var(--staff-b));
+  position: absolute; width: 30px; height: 30px; pointer-events: none; will-change: transform, opacity;
+  background: radial-gradient(circle, #fff 0, color-mix(in srgb, #fff 40%, var(--tint)) 22%, transparent 68%);
+  animation: staff-glint 3.8s ease-in-out infinite; animation-delay: calc(var(--o, 0s) * -1);
+}
+@keyframes staff-glint { 0%, 100% { opacity: 0.12; transform: scale(0.6); } 50% { opacity: 0.85; transform: scale(1.15); } }
+
+/* ---------------------------------------------------------------- notes that float up (player, cards, mood tiles) */
+.mood-link-tile { position: relative; }
+.fx-rise { position: absolute; inset: 0; z-index: 3; overflow: visible; pointer-events: none; }
+.rn {
+  position: absolute; left: calc(var(--x, 50) * 1%); bottom: 42%; display: block; width: 18px; height: 27px; opacity: 0; pointer-events: none;
+  color: var(--acc); filter: drop-shadow(0 0 5px rgba(var(--acc-rgb), 0.7)); will-change: transform, opacity;
+}
+.rn-beam { width: 26px; height: 26px; }
+.rn-treble { width: 12px; height: 30px; }
+@keyframes note-rise {
+  0% { opacity: 0; transform: translate3d(0, 10px, 0) rotate(-8deg) scale(0.8); }
+  16% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate3d(var(--dx, 0), -74px, 0) rotate(10deg) scale(1.08); }
+}
+.dash-card:hover > .fx-rise .rn, .dash-card.is-live > .fx-rise .rn, .dash-mood:hover > .fx-rise .rn, .mood-link-tile:hover > .fx-rise .rn,
+.dash-player.is-playing > .fx-rise .rn { animation: note-rise var(--d, 3.6s) ease-out infinite; animation-delay: var(--delay, 0s); }
+/* the player's notes drift up from the cover on the left and the play button in the middle */
+.dash-player > .fx-rise { inset: 0; z-index: 2; }
+.dash-player > .fx-rise .rn { bottom: 40%; left: calc(2% + var(--x, 50) * 0.5%); }
+.dash-card > .fx-rise { inset: 0; }
+.dash-card > .fx-rise .rn { bottom: auto; top: 44%; }
+.dash-card.is-live > .fx-rise .rn { filter: drop-shadow(0 0 5px rgba(var(--acc-rgb), 0.8)); }
+
+/* ---------------------------------------------------------------- phones, lite mode, reduced motion */
+@media (max-width: 760px) { .staff { opacity: 0.5; } .rn:nth-child(n+4) { display: none; } }
+html.fx-lite .sp, html.fx-lite .rn:nth-child(n+3) { display: none; }
+html.fx-lite .sn b { animation: none; }
+html.fx-off .staff, html.fx-off .fx-rise { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .staff-flow, .sn b, .sp, .rn { animation: none !important; }
+  .fx-rise { display: none !important; }
+  .sp { opacity: 0.35; }
+}

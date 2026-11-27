@@ -11,13 +11,11 @@
  *   - navigation (links, forms, back/forward) and the page lifecycle
  *   - the Log in / Sign up pop-up, favourites, "add to playlist", toasts
  * Per-page behaviour lives in pages.js and registers with MoodifyApp.page().
- * Sound effects live in sound.js and are completely separate.
  */
 (function (global) {
   'use strict';
   var doc = document;
   var FX = global.MoodifyFX || {};
-  var Sound = function () { return global.MoodifySound; };
   var App = global.MoodifyApp = global.MoodifyApp || {};
   var pages = App.pages = {};
   App.page = function (id, fn) { pages[id] = fn; };
@@ -38,7 +36,7 @@
 
   var ICON = {
     play: '<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><path d="M8 5.200v13.600a.8.8 0 0 0 1.200.7l10.800-6.800a.8.8 0 0 0 0-1.400L9.200 4.500A.8.8 0 0 0 8 5.200z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><rect x="6.500" y="5" width="3.800" height="14" rx="1.200"/><rect x="13.700" y="5" width="3.800" height="14" rx="1.200"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" class="fill" aria-hidden="true"><rect x="6.500" y="5" width="3.800" height="14"/><rect x="13.700" y="5" width="3.800" height="14"/></svg>',
     vol: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="M15.500 9a4.200 4.200 0 0 1 0 6M18 6.500a7.700 7.700 0 0 1 0 11"/></svg>',
     mute: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.500h3.500L12 5.500v13l-4.500-4H4z"/><path d="m16 9.500 5 5M21 9.500l-5 5"/></svg>',
     heart: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.500-4.600-7.500-10.300A4.300 4.300 0 0 1 12 7.200a4.300 4.300 0 0 1 7.500 2.500C19.500 15.400 12 20 12 20z"/></svg>',
@@ -165,6 +163,7 @@
       var on = !!slug && card.getAttribute('data-slug') === slug;
       card.classList.toggle('is-playing', on);
       card.classList.toggle('is-live', on && isLive);
+      if (on && isLive && global.MoodifyNotes) global.MoodifyNotes.ensure(card);
     });
     $$('[data-play-slug]', inner).forEach(function (b) {
       var on = !!slug && b.getAttribute('data-play-slug') === slug && isLive;
@@ -201,6 +200,7 @@
     var playing = live();
     el.play.innerHTML = playing ? ICON.pause : ICON.play;
     el.play.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+    el.shell.classList.toggle('is-playing', playing);
     markPlaying();
     emit('state');
   }
@@ -455,7 +455,6 @@
     data.favorites = Object.keys(favs);
     paintFav(slug);
     $$('[data-fav="' + slug + '"]').forEach(function (b) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); });
-    if (Sound()) Sound().play(was ? 'tick' : 'pop');
     if (dash.getAttribute('data-page') === 'favorites' && was) dropFavoriteRow(slug);
     postJSON(data.urls.favorite, { slug: slug }).then(function (j) {
       if (!j.ok) throw new Error(j.error || 'failed');
@@ -467,7 +466,6 @@
       if (was) favs[slug] = true; else delete favs[slug];
       data.favorites = Object.keys(favs);
       paintFav(slug);
-      if (Sound()) Sound().play('error');
       toast('Could not update your favourites. Please try again.');
     });
   }
@@ -498,7 +496,7 @@
     var html = '<h3>Add to playlist</h3>';
     data.playlists.forEach(function (pl) {
       var has = pl.slugs.indexOf(slug) !== -1;
-      html += '<button type="button" role="menuitem" data-sfx="none" data-pl="' + pl.id + '"><span>' + esc(pl.name) + '</span>' + (has ? '<span class="has">Added</span>' : '') + '</button>';
+      html += '<button type="button" role="menuitem" data-pl="' + pl.id + '"><span>' + esc(pl.name) + '</span>' + (has ? '<span class="has">Added</span>' : '') + '</button>';
     });
     if (!data.playlists.length) html += '<a href="' + esc(data.urls.playlists) + '#new">Create your first playlist</a>';
     else html += '<div class="sep"></div><a href="' + esc(data.urls.playlists) + '#new">New playlist</a>';
@@ -526,11 +524,9 @@
         data.playlists.forEach(function (pl) {
           if (String(pl.id) === String(id) && small) small.textContent = pl.slugs.length + ' track' + (pl.slugs.length === 1 ? '' : 's');
         });
-        if (Sound()) Sound().play(j.added ? 'pop' : 'tick');
         toast(j.added ? '“' + (t ? t.title : 'Track') + '” added to your playlist.' : j.message);
         App.dropCache();
       }).catch(function () {
-        if (Sound()) Sound().play('error');
         toast('Could not add that track. Please try again.');
       });
     });
@@ -544,7 +540,6 @@
       data.current = mood;
       dash.setAttribute('data-current-mood', mood);
       if (FX.setMood) FX.setMood(mood, { action: true });
-      if (Sound()) Sound().play('chime');
       toast(j.message || ('Mood saved: ' + mood + '.'));
       App.dropCache();
       return mood;
@@ -632,7 +627,7 @@
   Object.defineProperty(App, 'isAuthenticated', { get: function () { return signedIn; } });
 
   // Logged-out visitors: a real click anywhere in the app opens the pop-up. Scrolling, hovering and
-  // selecting text do not. Clicks inside the pop-up, and the Sound button, behave normally.
+  // selecting text do not. Clicks inside the pop-up behave normally; mark anything else that must work for guests with data-allow-guest.
   function guestClickGate(e) {
     if (signedIn || authDone) return;
     var t = e.target;
@@ -667,7 +662,7 @@
       var msg = ruleFor(form, i.name, v);
       if (msg) { setFieldError(form, i.name, msg); if (!firstBad) firstBad = i; }
     });
-    if (firstBad) { firstBad.focus(); if (Sound()) Sound().play('error'); return; }
+    if (firstBad) { firstBad.focus(); return; }
     var inputs = $$('input', form);
     function busy(on) {
       btn.disabled = on; btn.classList.toggle('is-loading', on);
@@ -679,7 +674,6 @@
     postJSON(form.getAttribute('action'), params).then(function (j) {
       if (j.ok) {
         authDone = true;                       // unlocked: no more pop-up while the page reloads as a member
-        if (Sound()) Sound().play('chime');
         closeAuth();
         global.setTimeout(function () { global.location.assign(j.redirect || '/'); }, 130);
         return;
@@ -688,12 +682,10 @@
       var msg = j.error || 'That did not work. Please try again.';
       if (!(j.field && setFieldError(form, j.field, msg))) { err.textContent = msg; err.hidden = false; }
       else { var bad = $('input[name="' + j.field + '"]', form); if (bad) bad.focus(); }
-      if (Sound()) Sound().play('error');
     }).catch(function () {
       busy(false);
       err.textContent = 'We could not reach the server. Check your connection and try again.';
       err.hidden = false;
-      if (Sound()) Sound().play('error');
     });
   }
   function wireAuthModal() {
@@ -859,7 +851,7 @@
     }).catch(function () {
       if (mine !== token) return;
       inner.classList.remove('is-out');
-      if (opts.method === 'POST') { toast('Could not reach the server. Please try again.'); if (Sound()) Sound().play('error'); }
+      if (opts.method === 'POST') { toast('Could not reach the server. Please try again.'); }
       else global.location.assign(url);
     });
   }
@@ -887,14 +879,7 @@
       navigate(u.pathname + u.search + u.hash);
       return;
     }
-    var path = u.pathname;
-    navigate(u.pathname, { method: 'POST', body: params.toString(), push: true }).then(function (r) {
-      if (!r || !Sound()) return;
-      var sameBack = r.finalUrl.split('?')[0] === path;                // sent straight back: it did not work
-      if (sameBack || r.status >= 400) { Sound().play('error'); return; }
-      var kind = form.getAttribute('data-done') || (/\/(delete|remove\/)/.test(path) ? 'tick' : /\/add$/.test(path) ? 'pop' : 'chime');
-      Sound().play(kind);
-    });
+    navigate(u.pathname, { method: 'POST', body: params.toString(), push: true });
   }
 
   /* ================================ global event wiring ================================ */
@@ -1023,6 +1008,7 @@
     dash = $('#dash');
     if (!dash || dash.__ready) return;
     dash.__ready = true;
+    try { global.localStorage.removeItem('moodify.sound'); } catch (e) { /* old sound preference from earlier versions */ }
     work = $('#dashWork');
     inner = $('#dashInner');
     readData();

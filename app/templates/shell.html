@@ -10,6 +10,7 @@
 {% block head_extra %}
 <link href="{{ url_for('static', filename='css/dashboard.css') }}" rel="stylesheet">
 <link href="{{ url_for('static', filename='css/pages.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/staff.css') }}" rel="stylesheet">
 {% endblock %}
 {% block content %}
 {% set signed_in = current_user.is_authenticated %}
@@ -74,9 +75,6 @@
       </div>
 
       <div class="dash-account">
-        <button type="button" class="dash-icon-btn sound-toggle" id="soundToggle" data-allow-guest aria-pressed="true" aria-label="Sound effects on" title="Sound effects: on" data-nosound>
-          <span class="s-on">{{ ico('sound-on') }}</span><span class="s-off">{{ ico('sound-off') }}</span>
-        </button>
         {% if signed_in %}
         <details class="dash-menu">
           <summary aria-label="Account menu"><span class="dash-avatar">{{ (current_user.username or 'M')[0]|upper }}</span></summary>
@@ -96,6 +94,7 @@
     </header>
 
     <main class="dash-work" id="dashWork" tabindex="-1">
+      <div class="staff" id="staff" aria-hidden="true"></div>
       <div class="dash-inner" id="dashInner">
         {% block page %}{% endblock %}
       </div>
