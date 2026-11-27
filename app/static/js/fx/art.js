@@ -28,7 +28,7 @@
     Sad: '<path d="M12 3.2s6 6.200 6 10.600A6 6 0 0 1 6 13.800C6 9.400 12 3.200 12 3.200z"/><path d="M9.200 14.500a3 3 0 0 0 2.300 2.300"/>',
     Motivational: '<path d="M3 19.500 9.500 8l3.500 6 2-3 6 8.500z"/><path d="M9.500 8V3.500l4 1.600-4 1.400"/>',
     Focused: '<circle cx="12" cy="12" r="8.500"/><circle cx="12" cy="12" r="4.500"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
-    Nostalgic: '<rect x="3" y="6" width="18" height="12" rx="2.500"/><circle cx="8.500" cy="12" r="2"/><circle cx="15.500" cy="12" r="2"/><path d="M8.500 16h7"/>',
+    Nostalgic: '<rect x="3" y="6" width="18" height="12"/><circle cx="8.500" cy="12" r="2"/><circle cx="15.500" cy="12" r="2"/><path d="M8.500 16h7"/>',
     Adventurous: '<circle cx="12" cy="12" r="9"/><path d="m15.800 8.200-2.200 5.400-5.400 2.200 2.200-5.400z"/>',
     Reflective: '<path d="M20 14.500A8.500 8.500 0 0 1 9.500 4a8.500 8.500 0 1 0 10.500 10.500z"/>'
   };
@@ -105,7 +105,7 @@
       var bars = 14, bw = 200 / bars;
       for (var b = 0; b < bars; b++) {
         var hh = 24 + rand() * 110;
-        p += '<rect x="' + (b * bw + 3).toFixed(1) + '" y="' + (190 - hh).toFixed(1) + '" width="' + (bw - 6).toFixed(1) + '" height="' + hh.toFixed(1) + '" rx="3" fill="' + pal[b % 3] + '" fill-opacity="' + (0.35 + rand() * 0.5).toFixed(2) + '"/>';
+        p += '<rect x="' + (b * bw + 3).toFixed(1) + '" y="' + (190 - hh).toFixed(1) + '" width="' + (bw - 6).toFixed(1) + '" height="' + hh.toFixed(1) + '" fill="' + pal[b % 3] + '" fill-opacity="' + (0.35 + rand() * 0.5).toFixed(2) + '"/>';
       }
     } else {                                    // orbits
       var cx = 70 + rand() * 60, cy = 70 + rand() * 60;

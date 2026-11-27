@@ -33,7 +33,7 @@ body > .container { animation: fx-page-in 0.18s ease-out both; }
   position: absolute;
   inset: 0;
   z-index: 2;
-  border-radius: inherit;
+  border-radius: 0;
   padding: 1.5px;
   pointer-events: none;
   opacity: 0;
@@ -95,7 +95,7 @@ html body :is(.home-primary-link, .home-mood-submit, .setup-submit, .register-su
   width: 0;
   height: 0;
   z-index: 0;
-  border-radius: 10px;
+  border-radius: 0;
   pointer-events: none;
   opacity: 0;
   background: linear-gradient(180deg, rgba(var(--fx-accent-rgb), 0.2), rgba(var(--fx-accent-rgb), 0.08));
@@ -180,7 +180,7 @@ html body *::after {
   min-height: 46px;
   padding: 8px 11px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 13px;
+  border-radius: 0;
   background: linear-gradient(145deg, rgba(var(--tile-rgb), 0.1), rgba(255, 255, 255, 0.03));
   color: #dbe9e6;
   font: inherit;
@@ -196,7 +196,7 @@ html body *::after {
   place-items: center;
   flex: 0 0 30px;
   height: 30px;
-  border-radius: 9px;
+  border-radius: 0;
   color: rgb(var(--tile-rgb));
   background: rgba(var(--tile-rgb), 0.14);
   transition: transform 0.25s ease, background-color 0.2s ease;

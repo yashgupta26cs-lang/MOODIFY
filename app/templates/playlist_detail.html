@@ -18,7 +18,7 @@
       {% if tracks %}<button type="button" class="dash-btn primary big" data-play-playlist="{{ playlist.id }}"><span>{{ ico('play') }}Play</span></button>{% endif %}
       <a class="dash-btn" href="{{ url_for('main.music') }}"><span>{{ ico('search') }}Browse music</span></a>
       <form method="POST" action="{{ url_for('main.delete_playlist', playlist_id=playlist.id) }}" data-confirm="Delete “{{ playlist.name }}”? This cannot be undone.">
-        <button type="submit" class="dash-btn danger" data-sfx="pop"><span>{{ ico('trash') }}Delete</span></button>
+        <button type="submit" class="dash-btn danger"><span>{{ ico('trash') }}Delete</span></button>
       </form>
     </div>
   </div>
@@ -41,7 +41,7 @@
             {% if song.slug in saved_slugs %}
             <span class="tag soft">{{ ico('check') }} Added</span>
             {% else %}
-            <form method="POST" action="{{ url_for('main.add_to_playlist', playlist_id=playlist.id) }}" class="inline-form"><input type="hidden" name="slug" value="{{ song.slug }}"><button type="submit" class="dash-chip" data-sfx="none">{{ ico('plus') }}<span>Add</span></button></form>
+            <form method="POST" action="{{ url_for('main.add_to_playlist', playlist_id=playlist.id) }}" class="inline-form"><input type="hidden" name="slug" value="{{ song.slug }}"><button type="submit" class="dash-chip">{{ ico('plus') }}<span>Add</span></button></form>
             {% endif %}
           </td>
         </tr>

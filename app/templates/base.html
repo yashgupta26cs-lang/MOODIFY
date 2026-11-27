@@ -11,6 +11,8 @@
     <link href="{{ url_for('static', filename='css/fx.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fx-flair.css') }}" rel="stylesheet">
     {% block head_extra %}{% endblock %}
+    <!-- Square corners everywhere. Keep last so it wins over Bootstrap and the other style sheets. -->
+    <link href="{{ url_for('static', filename='css/sharp.css') }}" rel="stylesheet">
 </head>
 <body data-mood="{{ current_user.preferred_mood or '' }}">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
@@ -55,8 +57,6 @@
 
     <!-- Motion & polish layer. Self-hosted, deferred, and optional: the app works without it
          (add ?fx=off to any URL to try the site with the layer disabled). -->
-    <!-- Interface sounds: one global manager (Web Audio API, no audio files) -->
-    <script defer src="{{ url_for('static', filename='js/sound.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/gsap.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/ScrollTrigger.min.js') }}"></script>
     <script defer src="{{ url_for('static', filename='vendor/lenis.min.js') }}"></script>
@@ -70,5 +70,6 @@
     <!-- App shell: player, in-app navigation, pop-ups and per-page behaviour -->
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script defer src="{{ url_for('static', filename='js/pages.js') }}"></script>
+    <script defer src="{{ url_for('static', filename='js/staff.js') }}"></script>
 </body>
 </html>

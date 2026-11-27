@@ -112,7 +112,7 @@ html body :is(.home-footer, .mo-footer, .player-footer, .rf-footer, .library-foo
   width: var(--size, 60vmax);
   height: var(--size, 60vmax);
   margin: calc(var(--size, 60vmax) / -2) 0 0 calc(var(--size, 60vmax) / -2);
-  border-radius: 50%;
+  border-radius: 0;
   background: radial-gradient(circle at center, var(--orb-color, #83e8c7) 0%, transparent 66%);
   opacity: var(--orb-opacity, 0.2);
   will-change: transform, opacity;
@@ -184,7 +184,7 @@ html body > nav.navbar.bg-dark {
 html body :is(a, button, select, input, textarea, [role="tab"], [tabindex]):focus-visible {
   outline: 2px solid rgba(var(--fx-accent-rgb), 0.85);
   outline-offset: 3px;
-  border-radius: inherit;
+  border-radius: 0;
 }
 html body :is(.home-search, .pl-create, .library-filters):focus-within {
   border-color: rgba(var(--fx-accent-rgb), 0.55);
@@ -219,7 +219,7 @@ html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
   inset: 0;
   z-index: 4;
   overflow: hidden;
-  border-radius: inherit;
+  border-radius: 0;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -233,7 +233,7 @@ html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
   width: 300px;
   height: 300px;
   margin: -150px 0 0 -150px;
-  border-radius: 50%;
+  border-radius: 0;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.17) 0%, rgba(var(--fx-accent-rgb), 0.07) 38%, transparent 68%);
   transform: translate3d(var(--fx-sx, 50%), var(--fx-sy, 50%), 0);
   will-change: transform;
@@ -254,7 +254,7 @@ html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
   width: 560px;
   height: 560px;
   margin: -280px 0 0 -280px;
-  border-radius: 50%;
+  border-radius: 0;
   background: radial-gradient(circle, rgba(var(--fx-accent-rgb), 0.11) 0%, rgba(var(--fx-accent-rgb), 0.04) 38%, transparent 68%);
 }
 .fx-cursor {
@@ -263,7 +263,7 @@ html body .fx-press:not(.fx-magnetic):active:not(:disabled) {
   height: 34px;
   margin: -17px 0 0 -17px;
   border: 1.5px solid rgba(var(--fx-accent-rgb), 0.7);
-  border-radius: 50%;
+  border-radius: 0;
   background: rgba(var(--fx-accent-rgb), 0.05);
 }
 @media (hover: none), (pointer: coarse) {
