@@ -2,6 +2,7 @@
 """Configuration settings for MOODIFY."""
 
 import os
+from datetime import timedelta
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -92,7 +93,13 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
 
+    # "Stay signed in": the login cookie lasts 30 days instead of ending with the browser.
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+
     # Enable secure cookies when deployed over HTTPS.
     SESSION_COOKIE_SECURE = (
         os.getenv("COOKIE_SECURE", "false").lower() == "true"
     )
+    REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE

@@ -214,6 +214,14 @@ def _render_home():
     )
 
 
+@main_bp.route('/health')
+def health():
+    """Uptime check for external pingers (keeps the free Render server awake). No database access."""
+    response = jsonify(status='ok')
+    response.headers['Cache-Control'] = 'no-store'
+    return response
+
+
 @main_bp.route('/')
 def index():
     return _render_home()
